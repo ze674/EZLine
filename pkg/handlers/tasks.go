@@ -17,8 +17,8 @@ func tasksListHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Рендерим шаблон
-	component := templates.TasksList(tasks, lineID)
+	// Рендерим шаблон, передавая активное задание
+	component := templates.TasksList(tasks, lineID, ActiveTaskID)
 
 	if r.Header.Get("HX-Request") == "true" {
 		component.Render(r.Context(), w)

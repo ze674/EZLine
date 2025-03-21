@@ -1,0 +1,95 @@
+package templates
+
+import (
+    "github.com/ze674/EZLine/pkg/api"
+    "strconv"
+)
+
+templ ScanningScreen(task api.Task) {
+    <div class="bg-white shadow-md rounded-lg p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold">Сканирование для задания #{strconv.Itoa(task.ID)}</h2>
+
+            <div class="flex space-x-2">
+                <button
+                    hx-post="/scanning/finish"
+                    hx-target="body"
+                    class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
+                >
+                    Завершить задание
+                </button>
+            </div>
+        </div>
+
+        <div class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 mb-4">
+            <p><strong>Продукт:</strong> {task.ProductName}</p>
+            <p><strong>Дата:</strong> {task.Date}</p>
+            <p><strong>Номер партии:</strong> {task.BatchNumber}</p>
+            <p><strong>Статус:</strong> {task.Status}</p>
+        </div>
+
+        <div class="mt-6">
+            <h3 class="text-xl font-semibold mb-4">Сканирование кодов</h3>
+
+            <div class="flex items-center space-x-4">
+                <input
+                    type="text"
+                    id="scan-input"
+                    placeholder="Отсканируйте или введите код..."
+                    class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    autofocus
+                />
+                <button
+                    class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded"
+                    onclick="processScan()"
+                >
+                    Проверить
+                </button>
+            </div>
+
+            <div id="scan-results" class="mt-4">
+                <!-- Здесь будут результаты сканирования -->
+            </div>
+        </div>
+
+        <script>
+            // Фокус на поле ввода при загрузке
+            document.addEventListener('DOMContentLoaded', function() {
+                document.getElementById('scan-input').focus();
+            });
+
+            // Обработка сканирования
+            function processScan() {
+                const scanInput = document.getElementById('scan-input');
+                const scanResults = document.getElementById('scan-results');
+
+                if (scanInput.value.trim() === '') {
+                    return;
+                }
+
+                // Здесь будет логика проверки кода
+                // В MVP версии просто показываем отсканированный код
+
+                const timestamp = new Date().toLocaleTimeString();
+
+                scanResults.innerHTML = `
+                    <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-2">
+                        <p><strong>${timestamp}:</strong> Код ${scanInput.value} принят</p>
+                    </div>
+                ` + scanResults.innerHTML;
+
+                // Очищаем поле ввода и фокусируемся на нем снова
+                scanInput.value = '';
+                scanInput.focus();
+            }
+
+            // Обработка нажатия Enter в поле ввода
+            document.getElementById('scan-input').addEventListener('keydown', function(event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    processScan();
+                }
+            });
+        </script>
+    </div>
+}

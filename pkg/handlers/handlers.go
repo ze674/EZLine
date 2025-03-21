@@ -11,6 +11,7 @@ import (
 var (
 	FactoryClient *api.FactoryClient
 	LineID        int // ID производственной линии из конфигурации
+	ActiveTaskID  int // 0 - если нет текущего задания
 )
 
 // Init инициализирует обработчики
@@ -27,6 +28,12 @@ func SetupRoutes(r chi.Router) {
 	// Маршруты для работы с заданиями
 	r.Route("/tasks", func(r chi.Router) {
 		r.Get("/", tasksListHandler) // список заданий
+	})
+
+	// Маршруты для сканирования
+	r.Route("/scanning", func(r chi.Router) {
+		r.Get("/{id}", StartScanningHandler)     // начало сканирования
+		r.Post("/finish", FinishScanningHandler) // завершение сканирования
 	})
 }
 

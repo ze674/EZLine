@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 )
 
@@ -78,4 +79,63 @@ type Task struct {
 	BatchNumber string    `json:"BatchNumber"` // Номер партии
 	Status      string    `json:"Status"`      // Статус задания
 	CreatedAt   time.Time `json:"CreatedAt"`   // Дата создания
+}
+
+// GetTaskByID получает информацию о задании по ID
+func (c *FactoryClient) GetTaskByID(taskID int) (Task, error) {
+	urlStr := fmt.Sprintf("%s/api/tasks/%d", c.BaseURL, taskID)
+
+	resp, err := c.HTTPClient.Get(urlStr)
+	if err != nil {
+		return Task{}, fmt.Errorf("ошибка при запросе к API: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return Task{}, fmt.Errorf("неожиданный HTTP статус: %d", resp.StatusCode)
+	}
+
+	var response Response
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		return Task{}, fmt.Errorf("ошибка при декодировании ответа: %w", err)
+	}
+
+	if !response.Success {
+		return Task{}, fmt.Errorf("ошибка API: %s", response.Error)
+	}
+
+	// Преобразуем data в задание
+	taskData, err := json.Marshal(response.Data)
+	if err != nil {
+		return Task{}, fmt.Errorf("ошибка при маршалинге данных: %w", err)
+	}
+
+	var task Task
+	if err := json.Unmarshal(taskData, &task); err != nil {
+		return Task{}, fmt.Errorf("ошибка при демаршалинге задания: %w", err)
+	}
+
+	return task, nil
+}
+
+// UpdateTaskStatus обновляет статус задания
+func (c *FactoryClient) UpdateTaskStatus(taskID int, newStatus string) error {
+	urlStr := fmt.Sprintf("%s/api/tasks/%d/status", c.BaseURL, taskID)
+
+	// Подготовка данных формы
+	data := url.Values{}
+	data.Set("status", newStatus)
+
+	// Отправка POST запроса
+	resp, err := c.HTTPClient.PostForm(urlStr, data)
+	if err != nil {
+		return fmt.Errorf("ошибка при отправке запроса: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("неожиданный HTTP статус: %d", resp.StatusCode)
+	}
+
+	return nil
 }
