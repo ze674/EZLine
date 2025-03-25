@@ -7,15 +7,20 @@ import (
 
 // Config содержит настройки приложения
 type Config struct {
-	FactoryURL string `json:"factory_url"` // URL API EZFactory
-	LineID     int    `json:"line_id"`     // ID производственной линии
+	FactoryURL     string `json:"factory_url"`     // URL API EZFactory
+	LineID         int    `json:"line_id"`         // ID производственной линии
+	ScannerAddress string `json:"scanner_address"` // IP адрес сканнера
+	StoragePath    string `json:"storage_path"`    // Путь к файлу хранения файлов
+	CodeLength     int    `json:"code_length"`     // Длина кода
 }
 
 // DefaultConfig возвращает конфигурацию по умолчанию
 func DefaultConfig() Config {
 	return Config{
-		FactoryURL: "http://localhost:8081",
-		LineID:     1,
+		FactoryURL:     "http://localhost:8081",
+		LineID:         1,
+		StoragePath:    "./data",
+		ScannerAddress: "127.0.0.1:2001",
 	}
 }
 

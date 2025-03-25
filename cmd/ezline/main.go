@@ -1,3 +1,4 @@
+// cmd/ezline/main.go
 package main
 
 import (
@@ -17,17 +18,21 @@ func main() {
 		cfg = config.DefaultConfig()
 	}
 
-	// Инициализируем обработчики с настройками из конфигурации
-	handlers.Init(cfg.FactoryURL, cfg.LineID)
+	// Инициализируем обработчики
+	handlers.Init(cfg.FactoryURL, cfg.LineID, cfg.ScannerAddress, cfg.StoragePath, cfg.CodeLength)
 
 	// Создаем роутер
 	r := chi.NewRouter()
 
 	// Middleware
-	r.Use(middleware.Logger)
+	//r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
 	// Настраиваем маршруты
+	// Обработчик для статических файлов
+	fileServer := http.FileServer(http.Dir("./static"))
+	r.Handle("/static/*", http.StripPrefix("/static/", fileServer))
+
 	handlers.SetupRoutes(r)
 
 	// Запускаем сервер

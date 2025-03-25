@@ -1,15 +1,14 @@
 package templates
 
 import (
-    "github.com/ze674/EZLine/pkg/api"
+    "github.com/ze674/EZLine/pkg/models"
     "strconv"
 )
 
-templ TasksList(tasks []api.Task, lineID int, activeTaskID int) {
+templ TasksList(tasks []models.Task, lineID int, activeTaskID int) {
     <div class="bg-white shadow-md rounded-lg p-6">
         <div class="flex justify-between items-center mb-6">
             <h2 class="text-2xl font-bold">Задания для линии {strconv.Itoa(lineID)}</h2>
-
             <div class="flex space-x-2">
                 <button hx-get="/tasks" hx-target="body" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">
                     Обновить
@@ -21,12 +20,11 @@ if activeTaskID != 0 {
     <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4">
         <p>
             В данный момент выполняется задание #{strconv.Itoa(activeTaskID)}.
-            <a href={ templ.SafeURL("/scanning/" + strconv.Itoa(activeTaskID)) } class="underline">Вернуться к сканированию</a>
+            <a href="/scanning/view" class="underline">Вернуться к сканированию</a>
             или
             <button hx-post="/scanning/finish" hx-target="body" class="underline">завершить задание</button>
         </p>
-    </div>
-}
+    </div> }
 
         if len(tasks) == 0 {
             <div class="bg-gray-100 p-6 rounded-lg text-center">
@@ -64,17 +62,21 @@ if activeTaskID != 0 {
                                     }
                                 </td>
                                 <td class="p-2 border">
-                                    if activeTaskID == 0 || activeTaskID == task.ID {
+                                    if activeTaskID == 0 {
                                         <button
                                             class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded"
                                             hx-get={string(templ.URL("/scanning/" + strconv.Itoa(task.ID)))}
                                             hx-target="body"
                                         >
-                                            if activeTaskID == task.ID {
-                                                Продолжить сканирование
-                                            } else {
                                                 Начать сканирование
-                                            }
+                                        </button>
+                                    } else if activeTaskID == task.ID {
+                                        <button
+                                            class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded"
+                                            hx-get={string(templ.URL("/scanning/view"))}
+                                            hx-target="body"
+                                        >
+                                             Продолжить сканирование
                                         </button>
                                     } else {
                                         <button

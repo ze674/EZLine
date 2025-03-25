@@ -1,23 +1,24 @@
+// templates/scanning.templ
 package templates
 
 import (
-    "github.com/ze674/EZLine/pkg/api"
+    "github.com/ze674/EZLine/pkg/models"
+    "github.com/ze674/EZLine/pkg/scanner"
     "strconv"
 )
 
-templ ScanningScreen(task api.Task) {
+// ScanningScreen отображает экран сканирования для задания
+templ ScanningScreen(task models.Task, connectionStatus string, hasActiveRoll bool, stats *scanner.ScanStats,currentRollNumber int) {
     <div class="bg-white shadow-md rounded-lg p-6">
         <div class="flex justify-between items-center mb-6">
             <h2 class="text-2xl font-bold">Сканирование для задания #{strconv.Itoa(task.ID)}</h2>
 
             <div class="flex space-x-2">
-                <button
-                    hx-post="/scanning/finish"
-                    hx-target="body"
-                    class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
-                >
-                    Завершить задание
-                </button>
+                <form method="post" action="/scanning/finish">
+                    <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded">
+                        Завершить задание
+                    </button>
+                </form>
             </div>
         </div>
 
@@ -27,69 +28,123 @@ templ ScanningScreen(task api.Task) {
             <p><strong>Номер партии:</strong> {task.BatchNumber}</p>
             <p><strong>Статус:</strong> {task.Status}</p>
         </div>
-
-        <div class="mt-6">
-            <h3 class="text-xl font-semibold mb-4">Сканирование кодов</h3>
-
-            <div class="flex items-center space-x-4">
-                <input
-                    type="text"
-                    id="scan-input"
-                    placeholder="Отсканируйте или введите код..."
-                    class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    autofocus
-                />
-                <button
-                    class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded"
-                    onclick="processScan()"
-                >
-                    Проверить
-                </button>
+        // Добавляем информацию о состоянии подключения к сканеру
+        if connectionStatus != "Сканер успешно подключен" && connectionStatus != "Сканер уже подключен" && connectionStatus != "Сканер подключен" && connectionStatus != "Сканер активен" {
+            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4">
+                <p><strong>Статус сканера:</strong> {connectionStatus}</p>
             </div>
+        } else {
+            <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4">
+                <p><strong>Статус сканера:</strong> {connectionStatus}</p>
+            </div>
+        }
 
-            <div id="scan-results" class="mt-4">
-                <!-- Здесь будут результаты сканирования -->
+        // Добавляем кнопки управления роликом
+        <div class="mt-6">
+            <h3 class="text-xl font-semibold mb-4">Управление роликом
+            if currentRollNumber > 0 {
+                        <span class="ml-2 bg-blue-100 text-blue-800 py-1 px-3 rounded-full text-sm">
+                            Текущий ролик: #{strconv.Itoa(currentRollNumber)}
+                        </span>
+                    }
+                    </h3>
+
+            <div class="flex space-x-4">
+                if !hasActiveRoll {
+                    <form method="post" action="/scanning/start-roll">
+                        <button
+                            type="submit"
+                            class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded"
+                        >
+                            Начать ролик
+                        </button>
+                    </form>
+                } else {
+                    <form method="post" action="/scanning/finish-roll">
+                        <button
+                            type="submit"
+                            class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded"
+                        >
+                            Закончить ролик
+                        </button>
+                    </form>
+                }
+
+                // Кнопка обновления статистики
+                <a
+                    href="/scanning/refresh-stats"
+                    hx-get="/scanning/refresh-stats"
+                    hx-trigger="click, every 0.2s"
+                    hx-target="body"
+                    class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded inline-block"
+                >
+                    Обновить статистику
+                </a>
             </div>
         </div>
 
-        <script>
-            // Фокус на поле ввода при загрузке
-            document.addEventListener('DOMContentLoaded', function() {
-                document.getElementById('scan-input').focus();
-            });
+        // Отображаем статистику сканирования, если она доступна
+        if stats != nil {
+            <div class="mt-6">
+                <h3 class="text-xl font-semibold mb-4">Статистика сканирования
+                if hasActiveRoll && currentRollNumber > 0 {
+                                <span class="ml-2 bg-blue-100 text-blue-800 py-1 px-3 rounded-full text-sm">
+                                    Ролик #{strconv.Itoa(currentRollNumber)}
+                                </span>
+                            }
+                            </h3>
 
-            // Обработка сканирования
-            function processScan() {
-                const scanInput = document.getElementById('scan-input');
-                const scanResults = document.getElementById('scan-results');
-
-                if (scanInput.value.trim() === '') {
-                    return;
-                }
-
-                // Здесь будет логика проверки кода
-                // В MVP версии просто показываем отсканированный код
-
-                const timestamp = new Date().toLocaleTimeString();
-
-                scanResults.innerHTML = `
-                    <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-2">
-                        <p><strong>${timestamp}:</strong> Код ${scanInput.value} принят</p>
+                <div class="grid grid-cols-3 gap-4 mb-4">
+                    <div class="bg-gray-100 p-4 rounded">
+                        <h4 class="font-semibold text-gray-700">Всего кодов</h4>
+                        <p class="text-2xl">{strconv.Itoa(stats.TotalCodes)}</p>
                     </div>
-                ` + scanResults.innerHTML;
+                    <div class="bg-green-100 p-4 rounded">
+                        <h4 class="font-semibold text-green-700">Валидных</h4>
+                        <p class="text-2xl">{strconv.Itoa(stats.ValidCodes)}</p>
+                    </div>
+                    <div class="bg-red-100 p-4 rounded">
+                        <h4 class="font-semibold text-red-700">Невалидных</h4>
+                        <p class="text-2xl">{strconv.Itoa(stats.InvalidCodes)}</p>
+                    </div>
+                </div>
 
-                // Очищаем поле ввода и фокусируемся на нем снова
-                scanInput.value = '';
-                scanInput.focus();
-            }
-
-            // Обработка нажатия Enter в поле ввода
-            document.getElementById('scan-input').addEventListener('keydown', function(event) {
-                if (event.key === 'Enter') {
-                    event.preventDefault();
-                    processScan();
+                // Последний отсканированный код
+                if stats.LastCode != "" {
+                    <div class="mb-4">
+                        <h4 class="font-semibold">Последний код:</h4>
+                        if stats.LastResult {
+                            <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-3">
+                                <p>{stats.LastCode} - Валидный</p>
+                            </div>
+                        } else {
+                            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-3">
+                                <p>{stats.LastCode} - Ошибка: {stats.LastError}</p>
+                            </div>
+                        }
+                    </div>
                 }
-            });
-        </script>
+
+                // Последние 10 кодов
+                if len(stats.RecentCodes) > 0 {
+                    <div>
+                        <h4 class="font-semibold mb-2">Последние коды:</h4>
+                        <div class="max-h-60 overflow-y-auto border rounded p-2">
+                            for i := 0; i < len(stats.RecentCodes); i++ {
+                                if stats.RecentResults[i] {
+                                    <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-2 mb-1">
+                                        <p>{stats.RecentCodes[i]} - Валидный</p>
+                                    </div>
+                                } else {
+                                    <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-2 mb-1">
+                                        <p>{stats.RecentCodes[i]} - Невалидный</p>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
     </div>
 }

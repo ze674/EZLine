@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/ze674/EZLine/pkg/models"
 	"net/http"
 	"net/url"
 	"time"
@@ -10,9 +11,9 @@ import (
 
 // Response общая структура ответа от API
 type Response struct {
-	Success bool        `json:"success"`
-	Data    interface{} `json:"data"`
-	Error   string      `json:"error,omitempty"`
+	Success bool            `json:"success"`
+	Data    json.RawMessage `json:"data"`
+	Error   string          `json:"error,omitempty"`
 }
 
 // FactoryClient предоставляет методы для взаимодействия с API EZFactory
@@ -32,87 +33,63 @@ func NewFactoryClient(baseURL string) *FactoryClient {
 }
 
 // GetTasks получает список заданий для указанной линии
-func (c *FactoryClient) GetTasks(lineID int) ([]Task, error) {
+func (c *FactoryClient) GetTasks(lineID int) ([]models.Task, error) {
 	url := fmt.Sprintf("%s/api/tasks?line_id=%d", c.BaseURL, lineID)
+
+	tasks := make([]models.Task, 0)
 
 	resp, err := c.HTTPClient.Get(url)
 	if err != nil {
-		return nil, fmt.Errorf("ошибка при запросе к API: %w", err)
+		return tasks, fmt.Errorf("ошибка при запросе к API: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("неожиданный HTTP статус: %d", resp.StatusCode)
+		return tasks, fmt.Errorf("неожиданный HTTP статус: %d", resp.StatusCode)
 	}
 
 	var response Response
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		return nil, fmt.Errorf("ошибка при декодировании ответа: %w", err)
+		return tasks, fmt.Errorf("ошибка при декодировании ответа: %w", err)
 	}
 
 	if !response.Success {
-		return nil, fmt.Errorf("ошибка API: %s", response.Error)
+		return tasks, fmt.Errorf("ошибка API: %s", response.Error)
 	}
 
-	// Преобразуем data в массив задач
-	tasksData, err := json.Marshal(response.Data)
-	if err != nil {
-		return nil, fmt.Errorf("ошибка при маршалинге данных: %w", err)
-	}
-
-	var tasks []Task
-	if err := json.Unmarshal(tasksData, &tasks); err != nil {
-		return nil, fmt.Errorf("ошибка при демаршалинге заданий: %w", err)
+	if err := json.Unmarshal(response.Data, &tasks); err != nil {
+		return []models.Task{}, fmt.Errorf("ошибка при демаршалинге заданий: %w", err)
 	}
 
 	return tasks, nil
 }
 
-// Task представляет производственное задание
-type Task struct {
-	ID          int       `json:"ID"`          // Уникальный идентификатор
-	ProductID   int       `json:"ProductID"`   // ID продукта
-	ProductName string    `json:"ProductName"` // Название продукта
-	LineID      int       `json:"LineID"`      // ID производственной линии
-	LineName    string    `json:"LineName"`    // Название линии
-	Date        string    `json:"Date"`        // Дата в формате ДД.ММ.ГГГГ
-	BatchNumber string    `json:"BatchNumber"` // Номер партии
-	Status      string    `json:"Status"`      // Статус задания
-	CreatedAt   time.Time `json:"CreatedAt"`   // Дата создания
-}
-
 // GetTaskByID получает информацию о задании по ID
-func (c *FactoryClient) GetTaskByID(taskID int) (Task, error) {
+func (c *FactoryClient) GetTaskByID(taskID int) (models.Task, error) {
 	urlStr := fmt.Sprintf("%s/api/tasks/%d", c.BaseURL, taskID)
 
 	resp, err := c.HTTPClient.Get(urlStr)
 	if err != nil {
-		return Task{}, fmt.Errorf("ошибка при запросе к API: %w", err)
+		return models.Task{}, fmt.Errorf("ошибка при запросе к API: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return Task{}, fmt.Errorf("неожиданный HTTP статус: %d", resp.StatusCode)
+		return models.Task{}, fmt.Errorf("неожиданный HTTP статус: %d", resp.StatusCode)
 	}
 
 	var response Response
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		return Task{}, fmt.Errorf("ошибка при декодировании ответа: %w", err)
+		return models.Task{}, fmt.Errorf("ошибка при декодировании ответа: %w", err)
 	}
 
 	if !response.Success {
-		return Task{}, fmt.Errorf("ошибка API: %s", response.Error)
+		return models.Task{}, fmt.Errorf("ошибка API: %s", response.Error)
 	}
 
-	// Преобразуем data в задание
-	taskData, err := json.Marshal(response.Data)
-	if err != nil {
-		return Task{}, fmt.Errorf("ошибка при маршалинге данных: %w", err)
-	}
-
-	var task Task
-	if err := json.Unmarshal(taskData, &task); err != nil {
-		return Task{}, fmt.Errorf("ошибка при демаршалинге задания: %w", err)
+	var task models.Task
+	if err := json.Unmarshal(response.Data, &task); err != nil {
+		return models.Task{}, fmt.Errorf("ошибка при демаршалинге задания: %w", err)
 	}
 
 	return task, nil

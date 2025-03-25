@@ -1,4 +1,8 @@
 {
   "factory_url": "http://192.168.2.75:8081",
-  "line_id": 1
+  "line_id": 1,
+  "storage_path" : "./data",
+  "scanner_address" : "192.168.2.75",
+  "code_length" : 31,
+  "scanner_answer_noread" : "NOREAD"
 }
