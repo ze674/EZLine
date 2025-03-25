@@ -34,11 +34,11 @@ func NewFactoryClient(baseURL string) *FactoryClient {
 
 // GetTasks получает список заданий для указанной линии
 func (c *FactoryClient) GetTasks(lineID int) ([]models.Task, error) {
-	url := fmt.Sprintf("%s/api/tasks?line_id=%d", c.BaseURL, lineID)
+	urlStr := fmt.Sprintf("%s/api/tasks?line_id=%d", c.BaseURL, lineID)
 
 	tasks := make([]models.Task, 0)
 
-	resp, err := c.HTTPClient.Get(url)
+	resp, err := c.HTTPClient.Get(urlStr)
 	if err != nil {
 		return tasks, fmt.Errorf("ошибка при запросе к API: %w", err)
 	}

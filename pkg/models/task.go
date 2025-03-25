@@ -2,6 +2,13 @@ package models
 
 import "time"
 
+// Статусы заданий
+const (
+	TaskStatusNew        = "новое"
+	TaskStatusInProgress = "в работе"
+	TaskStatusCompleted  = "завершено"
+)
+
 // Task представляет производственное задание
 type Task struct {
 	ID          int       `json:"ID"`          // Уникальный идентификатор
