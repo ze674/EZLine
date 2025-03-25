@@ -3,12 +3,11 @@ package templates
 
 import (
     "github.com/ze674/EZLine/pkg/models"
-    "github.com/ze674/EZLine/pkg/scanner"
     "strconv"
 )
 
 // ScanningScreen отображает экран сканирования для задания
-templ ScanningScreen(task models.Task, connectionStatus string, hasActiveRoll bool, stats *scanner.ScanStats,currentRollNumber int) {
+templ ScanningScreen(task models.Task, connectionStatus string, hasActiveRoll bool, stats *models.ScanStats,currentRollNumber int) {
     <div class="bg-white shadow-md rounded-lg p-6">
         <div class="flex justify-between items-center mb-6">
             <h2 class="text-2xl font-bold">Сканирование для задания #{strconv.Itoa(task.ID)}</h2>

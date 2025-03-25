@@ -12,15 +12,12 @@ var (
 	FactoryClient *api.FactoryClient
 	LineID        int
 	ActiveTaskID  int
+	TasksHandlers *TaskHandler
 )
 
 // Init инициализирует обработчики
-func Init(factoryURL string, lineID int, scannerAddress string, storagePath string, codeLength int) {
-	FactoryClient = api.NewFactoryClient(factoryURL)
-	LineID = lineID
-
-	// Инициализируем модуль сканирования
-	InitScanning(scannerAddress, storagePath, codeLength)
+func Init(tasksHandlers *TaskHandler) {
+	TasksHandlers = tasksHandlers
 }
 
 // SetupRoutes настраивает маршруты HTTP
@@ -30,17 +27,17 @@ func SetupRoutes(r chi.Router) {
 
 	// Маршруты для работы с заданиями
 	r.Route("/tasks", func(r chi.Router) {
-		r.Get("/", tasksListHandler) // список заданий
+		r.Get("/", TasksHandlers.ListTasksHandler) // список заданий
 	})
 
 	// Маршруты для сканирования
 	r.Route("/scanning", func(r chi.Router) {
-		r.Get("/{id}", StartTaskHandler)
-		r.Get("/view", ViewScanningHandler)
-		r.Post("/start-roll", StartRollHandler)      // начало сканирования ролика
-		r.Post("/finish-roll", FinishRollHandler)    // завершение сканирования ролика
-		r.Get("/refresh-stats", RefreshStatsHandler) // обновление статистики
-		r.Post("/finish", FinishScanningHandler)     // завершение сканирования
+		r.Get("/{id}", TasksHandlers.StartTaskHandler)             // запуск задания
+		r.Get("/view", TasksHandlers.ViewScanningHandler)          // представление сканирования
+		r.Post("/start-roll", TasksHandlers.StartRollHandler)      // начало сканирования ролика
+		r.Post("/finish-roll", TasksHandlers.FinishRollHandler)    // завершение сканирования ролика
+		r.Get("/refresh-stats", TasksHandlers.RefreshStatsHandler) // обновление статистики
+		r.Post("/finish", TasksHandlers.FinishTaskHandler)         // завершение текущее задание
 	})
 }
 

@@ -3,6 +3,7 @@ package scanner
 import (
 	"bufio"
 	"fmt"
+	"github.com/ze674/EZLine/pkg/models"
 	"net"
 	"strings"
 	"sync"
@@ -14,28 +15,16 @@ var readTimeout = 500 * time.Millisecond
 
 var errAlreadyConnected = fmt.Errorf("already connected")
 
-type ScanStats struct {
-	TotalCodes    int      //Общее количество кодов
-	ValidCodes    int      //Количество валидных кодов
-	InvalidCodes  int      //Количество невалидных кодов
-	RecentCodes   []string //Последние коды (до 10)
-	RecentResults []bool   //Результаты валидации последних кодов
-	LastCode      string   //Последний отсканированный код
-	LastResult    bool     //Результат валидации последнего кода
-	LastError     string   //Ошибка валидации последнего кода
-
-}
-
 type TCPScanner struct {
-	address     string          // Адрес в формате host:port
-	conn        net.Conn        // TCP-Соединение
-	active      bool            // Флаг активного соединения
-	listening   bool            // Флаг активного прослушивания
-	mu          sync.Mutex      // Мьютекс для синхронизации
-	codes       map[string]bool //Карта для отслеживания уникальности кодов
-	codeLength  int             //Длина кода для валидации
-	stats       ScanStats       //Статистика сканирования
-	rollManager *RollManager    //Менеджер роликов
+	address     string           // Адрес в формате host:port
+	conn        net.Conn         // TCP-Соединение
+	active      bool             // Флаг активного соединения
+	listening   bool             // Флаг активного прослушивания
+	mu          sync.Mutex       // Мьютекс для синхронизации
+	codes       map[string]bool  //Карта для отслеживания уникальности кодов
+	codeLength  int              //Длина кода для валидации
+	stats       models.ScanStats //Статистика сканирования
+	rollManager *RollManager     //Менеджер роликов
 }
 
 // NewTCPScanner создает новый экземпляр TCP-Сканнера
@@ -46,7 +35,7 @@ func NewTCPScanner(address string, codeLength int) *TCPScanner {
 		listening:  false,
 		codes:      make(map[string]bool),
 		codeLength: codeLength,
-		stats: ScanStats{
+		stats: models.ScanStats{
 			RecentCodes:   make([]string, 0, 10),
 			RecentResults: make([]bool, 0, 10),
 		},
@@ -127,7 +116,7 @@ func (s *TCPScanner) StartListening() error {
 	}
 
 	// Сбрасываем статистику и карту кодов при начале нового сканирования
-	s.stats = ScanStats{
+	s.stats = models.ScanStats{
 		RecentCodes:   make([]string, 0, 10),
 		RecentResults: make([]bool, 0, 10),
 	}
@@ -150,12 +139,12 @@ func (s *TCPScanner) StopListening() {
 }
 
 // GetStats возвращает текущую статистику сканирования
-func (s *TCPScanner) GetStats() ScanStats {
+func (s *TCPScanner) GetStats() models.ScanStats {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	// Создаем копию статистики
-	stats := ScanStats{
+	stats := models.ScanStats{
 		TotalCodes:    s.stats.TotalCodes,
 		ValidCodes:    s.stats.ValidCodes,
 		InvalidCodes:  s.stats.InvalidCodes,

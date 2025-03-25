@@ -12,12 +12,11 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import (
 	"github.com/ze674/EZLine/pkg/models"
-	"github.com/ze674/EZLine/pkg/scanner"
 	"strconv"
 )
 
 // ScanningScreen отображает экран сканирования для задания
-func ScanningScreen(task models.Task, connectionStatus string, hasActiveRoll bool, stats *scanner.ScanStats, currentRollNumber int) templ.Component {
+func ScanningScreen(task models.Task, connectionStatus string, hasActiveRoll bool, stats *models.ScanStats, currentRollNumber int) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -45,7 +44,7 @@ func ScanningScreen(task models.Task, connectionStatus string, hasActiveRoll boo
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(task.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/scanning.templ`, Line: 14, Col: 113}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/scanning.templ`, Line: 13, Col: 113}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -58,7 +57,7 @@ func ScanningScreen(task models.Task, connectionStatus string, hasActiveRoll boo
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(task.ProductName)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/scanning.templ`, Line: 26, Col: 65}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/scanning.templ`, Line: 25, Col: 65}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
@@ -71,7 +70,7 @@ func ScanningScreen(task models.Task, connectionStatus string, hasActiveRoll boo
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(task.Date)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/scanning.templ`, Line: 27, Col: 52}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/scanning.templ`, Line: 26, Col: 52}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
@@ -84,7 +83,7 @@ func ScanningScreen(task models.Task, connectionStatus string, hasActiveRoll boo
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(task.BatchNumber)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/scanning.templ`, Line: 28, Col: 74}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/scanning.templ`, Line: 27, Col: 74}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -97,7 +96,7 @@ func ScanningScreen(task models.Task, connectionStatus string, hasActiveRoll boo
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(task.Status)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/scanning.templ`, Line: 29, Col: 58}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/scanning.templ`, Line: 28, Col: 58}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -115,7 +114,7 @@ func ScanningScreen(task models.Task, connectionStatus string, hasActiveRoll boo
 			var templ_7745c5c3_Var7 string
 			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(connectionStatus)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/scanning.templ`, Line: 34, Col: 82}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/scanning.templ`, Line: 33, Col: 82}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 			if templ_7745c5c3_Err != nil {
@@ -133,7 +132,7 @@ func ScanningScreen(task models.Task, connectionStatus string, hasActiveRoll boo
 			var templ_7745c5c3_Var8 string
 			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(connectionStatus)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/scanning.templ`, Line: 38, Col: 82}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/scanning.templ`, Line: 37, Col: 82}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
@@ -156,7 +155,7 @@ func ScanningScreen(task models.Task, connectionStatus string, hasActiveRoll boo
 			var templ_7745c5c3_Var9 string
 			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(currentRollNumber))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/scanning.templ`, Line: 47, Col: 88}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/scanning.templ`, Line: 46, Col: 88}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 			if templ_7745c5c3_Err != nil {
@@ -199,7 +198,7 @@ func ScanningScreen(task models.Task, connectionStatus string, hasActiveRoll boo
 				var templ_7745c5c3_Var10 string
 				templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(currentRollNumber))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/scanning.templ`, Line: 92, Col: 80}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/scanning.templ`, Line: 91, Col: 80}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 				if templ_7745c5c3_Err != nil {
@@ -217,7 +216,7 @@ func ScanningScreen(task models.Task, connectionStatus string, hasActiveRoll boo
 			var templ_7745c5c3_Var11 string
 			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(stats.TotalCodes))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/scanning.templ`, Line: 100, Col: 75}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/scanning.templ`, Line: 99, Col: 75}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 			if templ_7745c5c3_Err != nil {
@@ -230,7 +229,7 @@ func ScanningScreen(task models.Task, connectionStatus string, hasActiveRoll boo
 			var templ_7745c5c3_Var12 string
 			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(stats.ValidCodes))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/scanning.templ`, Line: 104, Col: 75}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/scanning.templ`, Line: 103, Col: 75}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 			if templ_7745c5c3_Err != nil {
@@ -243,7 +242,7 @@ func ScanningScreen(task models.Task, connectionStatus string, hasActiveRoll boo
 			var templ_7745c5c3_Var13 string
 			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(stats.InvalidCodes))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/scanning.templ`, Line: 108, Col: 77}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/scanning.templ`, Line: 107, Col: 77}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 			if templ_7745c5c3_Err != nil {
@@ -266,7 +265,7 @@ func ScanningScreen(task models.Task, connectionStatus string, hasActiveRoll boo
 					var templ_7745c5c3_Var14 string
 					templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(stats.LastCode)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/scanning.templ`, Line: 118, Col: 50}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/scanning.templ`, Line: 117, Col: 50}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 					if templ_7745c5c3_Err != nil {
@@ -284,7 +283,7 @@ func ScanningScreen(task models.Task, connectionStatus string, hasActiveRoll boo
 					var templ_7745c5c3_Var15 string
 					templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(stats.LastCode)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/scanning.templ`, Line: 122, Col: 50}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/scanning.templ`, Line: 121, Col: 50}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 					if templ_7745c5c3_Err != nil {
@@ -297,7 +296,7 @@ func ScanningScreen(task models.Task, connectionStatus string, hasActiveRoll boo
 					var templ_7745c5c3_Var16 string
 					templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(stats.LastError)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/scanning.templ`, Line: 122, Col: 84}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/scanning.templ`, Line: 121, Col: 84}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 					if templ_7745c5c3_Err != nil {
@@ -327,7 +326,7 @@ func ScanningScreen(task models.Task, connectionStatus string, hasActiveRoll boo
 						var templ_7745c5c3_Var17 string
 						templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(stats.RecentCodes[i])
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/scanning.templ`, Line: 136, Col: 64}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/scanning.templ`, Line: 135, Col: 64}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 						if templ_7745c5c3_Err != nil {
@@ -345,7 +344,7 @@ func ScanningScreen(task models.Task, connectionStatus string, hasActiveRoll boo
 						var templ_7745c5c3_Var18 string
 						templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(stats.RecentCodes[i])
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/scanning.templ`, Line: 140, Col: 64}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/scanning.templ`, Line: 139, Col: 64}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 						if templ_7745c5c3_Err != nil {

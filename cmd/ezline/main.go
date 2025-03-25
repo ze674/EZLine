@@ -4,8 +4,10 @@ package main
 import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/ze674/EZLine/pkg/api"
 	"github.com/ze674/EZLine/pkg/config"
 	"github.com/ze674/EZLine/pkg/handlers"
+	"github.com/ze674/EZLine/pkg/services"
 	"log"
 	"net/http"
 )
@@ -18,8 +20,12 @@ func main() {
 		cfg = config.DefaultConfig()
 	}
 
+	factoryClient := api.NewFactoryClient(cfg.FactoryURL)
+	taskService := services.NewTaskService(factoryClient, cfg.LineID)
+	scanService := services.NewScanService(cfg.ScannerAddress, cfg.StoragePath, cfg.CodeLength)
+	taskHandlers := handlers.NewTaskHandler(taskService, scanService)
 	// Инициализируем обработчики
-	handlers.Init(cfg.FactoryURL, cfg.LineID, cfg.ScannerAddress, cfg.StoragePath, cfg.CodeLength)
+	handlers.Init(taskHandlers)
 
 	// Создаем роутер
 	r := chi.NewRouter()

@@ -24,12 +24,6 @@ var (
 	scannerMutex sync.Mutex
 )
 
-func InitScanning(tcpAddr, storage string, length int) {
-	scannerAddress = tcpAddr
-	storagePath = storage
-	codeLength = length
-}
-
 // StartScanningHandler обрабатывает запрос на начало сканирования
 func StartScanningHandler(w http.ResponseWriter, r *http.Request) {
 	// Получаем ID задания из URL
@@ -317,7 +311,7 @@ func RefreshStatsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Получаем статистику сканирования
-	var stats *scanner.ScanStats
+	var stats *models.ScanStats
 	if tcpScanner != nil {
 		s := tcpScanner.GetStats()
 		stats = &s
