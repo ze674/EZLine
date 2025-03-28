@@ -4,10 +4,10 @@ package main
 import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/ze674/EZLine/pkg/api"
-	"github.com/ze674/EZLine/pkg/config"
-	"github.com/ze674/EZLine/pkg/handlers"
-	"github.com/ze674/EZLine/pkg/services"
+	"github.com/ze674/EZLine/internal/api"
+	"github.com/ze674/EZLine/internal/config"
+	"github.com/ze674/EZLine/internal/handlers"
+	"github.com/ze674/EZLine/internal/services"
 	"log"
 	"net/http"
 )
@@ -22,10 +22,7 @@ func main() {
 
 	factoryClient := api.NewFactoryClient(cfg.FactoryURL)
 	taskService := services.NewTaskService(factoryClient, cfg.LineID)
-	scanService := services.NewScanService(cfg.ScannerAddress, cfg.StoragePath, cfg.CodeLength)
-	taskHandlers := handlers.NewTaskHandler(taskService, scanService)
-	// Инициализируем обработчики
-	handlers.Init(taskHandlers)
+	taskHandlers := handlers.NewTaskHandler(taskService)
 
 	// Создаем роутер
 	r := chi.NewRouter()
@@ -39,7 +36,7 @@ func main() {
 	fileServer := http.FileServer(http.Dir("./static"))
 	r.Handle("/static/*", http.StripPrefix("/static/", fileServer))
 
-	handlers.SetupRoutes(r)
+	handlers.SetupRoutes(r, taskHandlers)
 
 	// Запускаем сервер
 	log.Printf("Запуск сервера на http://localhost:8080 (Линия ID: %d, EZFactory: %s)",

@@ -3,7 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/ze674/EZLine/pkg/models"
+	"github.com/ze674/EZLine/internal/models"
 	"net/http"
 	"net/url"
 	"time"

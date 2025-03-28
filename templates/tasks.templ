@@ -1,7 +1,8 @@
+// templates/tasks.templ
 package templates
 
 import (
-    "github.com/ze674/EZLine/pkg/models"
+    "github.com/ze674/EZLine/internal/models"
     "strconv"
 )
 
@@ -16,15 +17,14 @@ templ TasksList(tasks []models.Task, lineID int, activeTaskID int) {
             </div>
         </div>
 
-if activeTaskID != 0 {
-    <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4">
-        <p>
-            В данный момент выполняется задание #{strconv.Itoa(activeTaskID)}.
-            <a href="/scanning/view" class="underline">Вернуться к сканированию</a>
-            или
-            <button hx-post="/scanning/finish" hx-target="body" class="underline">завершить задание</button>
-        </p>
-    </div> }
+        if activeTaskID != 0 {
+            <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4">
+                <p>
+                    У вас есть выбранное задание #{strconv.Itoa(activeTaskID)}.
+                    <a href="/active-task" class="underline">Перейти к выбранному заданию</a>
+                </p>
+            </div>
+        }
 
         if len(tasks) == 0 {
             <div class="bg-gray-100 p-6 rounded-lg text-center">
@@ -62,28 +62,23 @@ if activeTaskID != 0 {
                                     }
                                 </td>
                                 <td class="p-2 border">
-                                    if activeTaskID == 0 {
-                                        <button
-                                            class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded"
-                                            hx-get={string(templ.URL("/scanning/" + strconv.Itoa(task.ID)))}
-                                            hx-target="body"
-                                        >
-                                                Начать сканирование
-                                        </button>
+                                    if activeTaskID == 0 && task.Status != "завершено" {
+                                        <form method="post" action={templ.URL("/tasks/" + strconv.Itoa(task.ID) + "/select")}>
+                                            <button type="submit"
+                                                  class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded">
+                                                Выбрать
+                                            </button>
+                                        </form>
                                     } else if activeTaskID == task.ID {
-                                        <button
-                                            class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded"
-                                            hx-get={string(templ.URL("/scanning/view"))}
-                                            hx-target="body"
-                                        >
-                                             Продолжить сканирование
-                                        </button>
+                                        <a href="/active-task"
+                                           class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded">
+                                            Перейти к заданию
+                                        </a>
                                     } else {
                                         <button
-                                            class="bg-gray-300 text-gray-600 px-3 py-1 rounded cursor-not-allowed"
-                                            disabled
-                                            title="Завершите активное задание перед началом нового"
-                                        >
+                                          class="bg-gray-300 text-gray-600 px-3 py-1 rounded cursor-not-allowed"
+                                          disabled
+                                          title="Завершите активное задание перед выбором нового">
                                             Недоступно
                                         </button>
                                     }
