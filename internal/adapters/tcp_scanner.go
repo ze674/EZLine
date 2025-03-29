@@ -24,8 +24,8 @@ type Scanner struct {
 	reader      *bufio.Reader
 }
 
-// New создает новый экземпляр Scanner без установления соединения
-func New(address, scanCommand string) *Scanner {
+// NewScanner создает новый экземпляр Scanner без установления соединения
+func NewScanner(address, scanCommand string) *Scanner {
 	return &Scanner{
 		address:     address,
 		scanCommand: scanCommand,

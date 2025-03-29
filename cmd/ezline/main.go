@@ -4,12 +4,14 @@ package main
 import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/ze674/EZLine/internal/adapters"
 	"github.com/ze674/EZLine/internal/api"
 	"github.com/ze674/EZLine/internal/config"
 	"github.com/ze674/EZLine/internal/handlers"
 	"github.com/ze674/EZLine/internal/services"
 	"log"
 	"net/http"
+	"time"
 )
 
 func main() {
@@ -20,9 +22,14 @@ func main() {
 		cfg = config.DefaultConfig()
 	}
 
+	// Инициализируем TCP сканер
+	scanner := adapters.NewScanner(cfg.ScannerAddress, " ") // Пустая команда или команда по вашему выбору
+
 	factoryClient := api.NewFactoryClient(cfg.FactoryURL)
 	taskService := services.NewTaskService(factoryClient, cfg.LineID)
-	taskHandlers := handlers.NewTaskHandler(taskService)
+	scanService := services.NewProcessTaskService(taskService, scanner, 2*time.Second)
+	// Передаем сервис сканирования в обработчик заданий
+	taskHandlers := handlers.NewTaskHandler(taskService, scanService)
 
 	// Создаем роутер
 	r := chi.NewRouter()

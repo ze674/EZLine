@@ -6,7 +6,7 @@ import (
     "strconv"
 )
 
-templ ActiveTask(task models.Task) {
+templ ActiveTask(task models.Task, isScanning bool) {
     <div class="bg-white shadow-md rounded-lg p-6">
         <div class="flex justify-between items-center mb-6">
             <h2 class="text-2xl font-bold">Выбранное задание #{strconv.Itoa(task.ID)}</h2>
@@ -54,8 +54,34 @@ templ ActiveTask(task models.Task) {
             </div>
         </div>
 
-        <div class="bg-gray-100 p-6 rounded-lg mt-4 text-center">
-            <p class="text-gray-600">Здесь будет размещен функционал для выполнения задания</p>
+        <!-- Добавляем блок для управления сканированием -->
+        <div class="bg-gray-100 p-6 rounded-lg mt-4">
+            <h3 class="text-xl font-semibold mb-4">Управление сканированием</h3>
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-600">Статус сканирования:</p>
+                    if isScanning {
+                        <span class="bg-green-100 text-green-800 py-1 px-2 rounded-full">Активно</span>
+                    } else {
+                        <span class="bg-red-100 text-red-800 py-1 px-2 rounded-full">Остановлено</span>
+                    }
+                </div>
+                <div>
+                    if isScanning {
+                        <form method="post" action="/scanning/stop">
+                            <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded">
+                                Остановить сканирование
+                            </button>
+                        </form>
+                    } else {
+                        <form method="post" action="/scanning/start">
+                            <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">
+                                Начать сканирование
+                            </button>
+                        </form>
+                    }
+                </div>
+            </div>
         </div>
     </div>
 }

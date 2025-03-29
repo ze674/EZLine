@@ -8,15 +8,17 @@ import (
 	"strconv"
 )
 
-// TaskHandler обрабатывает запросы, связанные с заданиями
+// Добавляем новое поле в структуру TaskHandler
 type TaskHandler struct {
 	taskService *services.TaskService
+	scanService *services.ProcessTaskService // Добавляем сервис сканирования
 }
 
-// NewTaskHandler создает новый обработчик заданий
-func NewTaskHandler(taskService *services.TaskService) *TaskHandler {
+// Обновляем конструктор
+func NewTaskHandler(taskService *services.TaskService, scanService *services.ProcessTaskService) *TaskHandler {
 	return &TaskHandler{
 		taskService: taskService,
+		scanService: scanService,
 	}
 }
 
@@ -43,8 +45,7 @@ func (h *TaskHandler) ListTasksHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// handlers/task_handler.go
-// ActiveTaskHandler показывает страницу с активным заданием
+// Обновляем ActiveTaskHandler для передачи статуса сканирования в шаблон
 func (h *TaskHandler) ActiveTaskHandler(w http.ResponseWriter, r *http.Request) {
 	// Проверяем, есть ли активное задание
 	activeTaskID := h.taskService.GetActiveTaskID()
@@ -61,8 +62,11 @@ func (h *TaskHandler) ActiveTaskHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	// Проверяем, запущено ли сканирование
+	isScanning := h.scanService.IsRunning()
+
 	// Отображаем шаблон активного задания
-	component := templates.ActiveTask(task)
+	component := templates.ActiveTask(task, isScanning)
 
 	if r.Header.Get("HX-Request") == "true" {
 		component.Render(r.Context(), w)
@@ -103,4 +107,33 @@ func (h *TaskHandler) FinishTaskHandler(w http.ResponseWriter, r *http.Request) 
 
 	// Перенаправляем на список заданий
 	http.Redirect(w, r, "/tasks", http.StatusSeeOther)
+}
+
+// Добавляем обработчик для запуска сканирования
+func (h *TaskHandler) StartScanningHandler(w http.ResponseWriter, r *http.Request) {
+	// Проверяем, есть ли активное задание
+	activeTaskID := h.taskService.GetActiveTaskID()
+	if activeTaskID == 0 {
+		http.Error(w, "Нет активного задания", http.StatusBadRequest)
+		return
+	}
+
+	// Запускаем сканирование
+	err := h.scanService.Start(activeTaskID)
+	if err != nil {
+		http.Error(w, "Ошибка запуска сканирования: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Перенаправляем обратно на страницу активного задания
+	http.Redirect(w, r, "/active-task", http.StatusSeeOther)
+}
+
+// Добавляем обработчик для остановки сканирования
+func (h *TaskHandler) StopScanningHandler(w http.ResponseWriter, r *http.Request) {
+	// Останавливаем сканирование
+	h.scanService.Stop()
+
+	// Перенаправляем обратно на страницу активного задания
+	http.Redirect(w, r, "/active-task", http.StatusSeeOther)
 }

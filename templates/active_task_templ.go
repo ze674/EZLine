@@ -15,7 +15,7 @@ import (
 	"strconv"
 )
 
-func ActiveTask(task models.Task) templ.Component {
+func ActiveTask(task models.Task, isScanning bool) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -165,7 +165,37 @@ func ActiveTask(task models.Task) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</div></div></div></div><div class=\"bg-gray-100 p-6 rounded-lg mt-4 text-center\"><p class=\"text-gray-600\">Здесь будет размещен функционал для выполнения задания</p></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</div></div></div></div><!-- Добавляем блок для управления сканированием --><div class=\"bg-gray-100 p-6 rounded-lg mt-4\"><h3 class=\"text-xl font-semibold mb-4\">Управление сканированием</h3><div class=\"flex items-center justify-between\"><div><p class=\"text-gray-600\">Статус сканирования:</p>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if isScanning {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<span class=\"bg-green-100 text-green-800 py-1 px-2 rounded-full\">Активно</span>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<span class=\"bg-red-100 text-red-800 py-1 px-2 rounded-full\">Остановлено</span>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</div><div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if isScanning {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<form method=\"post\" action=\"/scanning/stop\"><button type=\"submit\" class=\"bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded\">Остановить сканирование</button></form>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<form method=\"post\" action=\"/scanning/start\"><button type=\"submit\" class=\"bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded\">Начать сканирование</button></form>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "</div></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

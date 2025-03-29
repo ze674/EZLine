@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-// handlers/handlers.go
+// internal/handlers/handlers.go
 func SetupRoutes(r chi.Router, taskHandler *TaskHandler) {
 	r.Get("/", homeHandler)
 
@@ -19,6 +19,10 @@ func SetupRoutes(r chi.Router, taskHandler *TaskHandler) {
 
 	// Страница активного задания
 	r.Get("/active-task", taskHandler.ActiveTaskHandler)
+
+	// Добавляем маршруты для управления сканированием
+	r.Post("/scanning/start", taskHandler.StartScanningHandler)
+	r.Post("/scanning/stop", taskHandler.StopScanningHandler)
 }
 
 // homeHandler отображает домашнюю страницу

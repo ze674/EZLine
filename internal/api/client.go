@@ -116,3 +116,33 @@ func (c *FactoryClient) UpdateTaskStatus(taskID int, newStatus string) error {
 
 	return nil
 }
+
+func (c *FactoryClient) GetProductByID(productID int) (models.Product, error) {
+	urlStr := fmt.Sprintf("%s/api/product/%d", c.BaseURL, productID)
+
+	resp, err := c.HTTPClient.Get(urlStr)
+	if err != nil {
+		return models.Product{}, fmt.Errorf("ошибка при запросе к API: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return models.Product{}, fmt.Errorf("неожиданный HTTP статус: %d", resp.StatusCode)
+	}
+
+	var response Response
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		return models.Product{}, fmt.Errorf("ошибка при декодировании ответа: %w", err)
+	}
+
+	if !response.Success {
+		return models.Product{}, fmt.Errorf("ошибка API: %s", response.Error)
+	}
+
+	var product models.Product
+	if err := json.Unmarshal(response.Data, &product); err != nil {
+		return models.Product{}, fmt.Errorf("ошибка при демаршалинге продукта: %w", err)
+	}
+
+	return product, nil
+}

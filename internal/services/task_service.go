@@ -40,6 +40,11 @@ func (s *TaskService) GetTaskByID(taskID int) (models.Task, error) {
 	return s.factoryClient.GetTaskByID(taskID)
 }
 
+func (s *TaskService) GetProductByID(productID int) (models.Product, error) {
+	// Вызов API для получения информации о продукте
+	return s.factoryClient.GetProductByID(productID)
+}
+
 // GetActiveTaskID возвращает ID активного задания
 func (s *TaskService) GetActiveTaskID() int {
 	s.mu.Lock()
