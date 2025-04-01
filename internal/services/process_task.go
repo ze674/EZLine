@@ -144,6 +144,11 @@ func (s *ProcessTaskService) Stop() {
 		s.cancelFunc = nil
 	}
 
+	// Закрываем соединение с принтером
+	if err := s.labelService.Close(); err != nil {
+		fmt.Printf("Ошибка при закрытии соединения с принтером: %v\n", err)
+	}
+
 	// Закрываем файлы генератора серийных номеров
 	if s.serialGenerator != nil {
 		if err := s.serialGenerator.Close(); err != nil {
@@ -164,6 +169,11 @@ func (s *ProcessTaskService) runScanLoop(ctx context.Context) {
 		return
 	}
 	defer s.scanner.Close()
+
+	// Подключаемся к принтеру
+	if err := s.labelService.Connect(); err != nil {
+		return
+	}
 
 	ticker := time.NewTicker(s.interval)
 	defer ticker.Stop()
