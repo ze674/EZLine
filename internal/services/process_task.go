@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/ze674/EZLine/internal/models"
 	"github.com/ze674/EZLine/internal/validator"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -26,26 +27,34 @@ type scanner interface {
 }
 
 type ProcessTaskService struct {
-	mu             sync.Mutex
-	interval       time.Duration
-	scanner        scanner
-	DataService    DataService
-	codeValidator  *validator.CodeValidator
-	running        bool
-	cancelFunc     context.CancelFunc
-	currentTask    *models.Task
-	currentProduct *models.Product
-	labelData      *models.LabelData
-	QuantityPerBox int
+	mu              sync.Mutex
+	interval        time.Duration
+	scanner         scanner
+	DataService     DataService
+	labelService    *LabelService
+	codeValidator   *validator.CodeValidator
+	running         bool
+	cancelFunc      context.CancelFunc
+	currentTask     *models.Task
+	currentProduct  *models.Product
+	labelData       *models.LabelData
+	QuantityPerBox  int
+	serialGenerator *SerialGenerator
+	storagePath     string // Добавляем путь для хранения файлов
 }
 
-func NewProcessTaskService(dataService DataService, scanner scanner, interval time.Duration) *ProcessTaskService {
+func NewProcessTaskService(dataService DataService, labelService *LabelService, scanner scanner, interval time.Duration) *ProcessTaskService { // Используем подкаталог "serials" в текущей директории
+	storagePath := filepath.Join(".", "data", "serials")
+
 	return &ProcessTaskService{
-		DataService: dataService,
-		scanner:     scanner,
-		interval:    interval,
-		running:     false,
-		currentTask: nil,
+		DataService:     dataService,
+		scanner:         scanner,
+		interval:        interval,
+		running:         false,
+		currentTask:     nil,
+		labelService:    labelService,
+		serialGenerator: NewSerialGenerator(storagePath),
+		storagePath:     storagePath,
 	}
 }
 
@@ -82,6 +91,17 @@ func (s *ProcessTaskService) Start(id int) error {
 		} else {
 			s.labelData = &labelData
 		}
+	}
+
+	// Инициализируем генератор серийных номеров для текущего задания
+	err = s.serialGenerator.Initialize(
+		s.currentTask.ID,
+		s.currentProduct.GTIN,
+		s.currentTask.Date,
+		s.currentTask.BatchNumber,
+	)
+	if err != nil {
+		return fmt.Errorf("ошибка инициализации генератора серийных номеров: %w", err)
 	}
 
 	// Создаем валидатор с параметрами из загруженного продукта
@@ -122,6 +142,13 @@ func (s *ProcessTaskService) Stop() {
 	if s.cancelFunc != nil {
 		s.cancelFunc()
 		s.cancelFunc = nil
+	}
+
+	// Закрываем файлы генератора серийных номеров
+	if s.serialGenerator != nil {
+		if err := s.serialGenerator.Close(); err != nil {
+			fmt.Printf("Ошибка при закрытии генератора серийных номеров: %v\n", err)
+		}
 	}
 
 	s.running = false
@@ -171,19 +198,46 @@ func (s *ProcessTaskService) runScanLoop(ctx context.Context) {
 			var invalidCodes []string
 
 			for _, code := range codes {
+
 				if s.codeValidator != nil {
 					validationResult := s.codeValidator.ValidateCode(code)
 					if !validationResult.Valid {
 						allValid = false
 						invalidCodes = append(invalidCodes,
 							fmt.Sprintf("%s (причина: %s)", code, validationResult.Message))
+						continue
 					}
+				}
+				// Проверка на дубликаты
+				if s.serialGenerator.IsCodeUsed(code) {
+					invalidCodes = append(invalidCodes,
+						fmt.Sprintf("%s (причина: %s)", code, "код уже использован"))
+					allValid = false
+
 				}
 			}
 
 			// Выводим результаты
 			if allValid {
-				fmt.Printf("Все %d кодов валидны!\n", len(codes))
+				// Генерируем серийный номер для коробки
+				boxSerial, sn, err := s.serialGenerator.GenerateBoxSerial()
+				if err != nil {
+					fmt.Printf("Ошибка генерации серийного номера: %v\n", err)
+					continue
+				}
+
+				// Сохраняем успешно валидированные коды в файл
+				err = s.serialGenerator.SaveCodes(boxSerial, codes)
+				if err != nil {
+					fmt.Printf("Ошибка при сохранении кодов: %v\n", err)
+					// Не прерываем работу из-за ошибки сохранения
+				}
+
+				fmt.Printf("Все %d кодов валидны! Серийный номер коробки: %s\n", len(codes), boxSerial)
+				err = s.labelService.PrintLabel(s.currentTask, s.labelData, sn)
+				if err != nil {
+					fmt.Printf("Ошибка печати этикетки: %v\n", err)
+				}
 				// Здесь можно добавить логику успешной обработки коробки
 			} else {
 				fmt.Printf("Найдены невалидные коды: %s\n", strings.Join(invalidCodes, ", "))

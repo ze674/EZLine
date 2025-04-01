@@ -1,0 +1,51 @@
+DOWNLOAD "DEMO.BAS"
+SIZE 100 mm,70 mm
+GAP 3 mm,0
+CODEPAGE UTF-8
+DIRECTION 1
+CLS
+BOX 20,15,340,220,4,0
+
+BLOCK 1,30,330,210,"ROMAN.TTF",0,0,50,0,2,0,"{{.Article}}"
+
+dmdata$ = "{{.GTIN}}"+"{{.BarcodeDate}}"+"{{.BatchNumber}}"+Serial$
+
+DMATRIX 350,70,70,70,c126,x8,18,18, dmdata$
+TEXT 380, 25,"ROMAN.TTF",0,0,8, Serial$
+
+TEXT 20,235,"ROMAN.TTF",0,0,20,"EAC"
+PUTBMP 160,230, "test1.bmp"
+PUTBMP 220,230, "hook.bmp"
+PUTBMP 280,230, "pap.bmp"
+PUTBMP 350,230, "top.bmp"
+PUTBMP 400,230, "temp.bmp"
+
+strText$ = "(01)" + "{{.GTIN}}"+ "(11){{.BarcodeDate}}(10){{.BatchNumber}}"
+str2$ = "01"+"{{.GTIN}}"+"11{{.BarcodeDate}}10{{.BatchNumber}}"
+BARCODE 1000,790,"128",110,0,270,3,3,str2$
+TEXT 1130,730,"ROMAN.TTF",270,0,8,strText$
+
+BLOCK 500,15,480,180,"ROMAN.TTF",0,0,8,0,2,0,"{{.Header}}"
+
+BLOCK 450,240,480,400,"ROMAN.TTF",0,0,15,0,2,0,"{{.Name}}"
+
+BLOCK 20,310,280,280,"ROMAN.TTF",0,0,8,10,"Масса нетто 1шт.
+Количество
+Масса нетто 1 кор.
+Дата производства
+Номер партии
+Упаковщик"
+
+BLOCK 300,310,300,280,"ROMAN.TTF",0,0,8,10,"{{.Weight}}" + "г." + "\[R]" + "{{.QuantityBox}}"  +"шт." +"\[R]" + "{{.WeightBox}}" +"кг." +"\[R]" + "{{.Date}}"  + "\[R]" + "{{.BatchNumber}}" + "\[R]" + "{{.Packer}}"
+
+TEXT 15,585,"ROMAN.TTF",0,0,8,"{{.Standard}}"
+TEXT 15,630,"ROMAN.TTF",0,0,8.4,"Срок годности: 12 месяцев при температуре не выше минус 18°C"
+
+BLOCK 15,670,990,180,"ROMAN.TTF",0,0,7,"Индивидуальный предприниматель Шибаланская Александра Александровна 606461, Россия, Нижегородская обл., г.Бор, пос. Неклюдово, ул. Западная, 21а;
+Адрес производства: 606461, Россия, Нижегородская обл., г.Бор, пос. Неклюдово, кв-л Дружба, д.20Д,
+тел. (83159)20-700"
+
+PRINT 1
+EOP
+Serial$ = "{{.SerialNumber}}"
+DEMO

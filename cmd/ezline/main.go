@@ -11,6 +11,7 @@ import (
 	"github.com/ze674/EZLine/internal/services"
 	"log"
 	"net/http"
+	"path/filepath"
 	"time"
 )
 
@@ -23,11 +24,21 @@ func main() {
 	}
 
 	// Инициализируем TCP сканер
-	scanner := adapters.NewScanner(cfg.ScannerAddress, " ") // Пустая команда или команда по вашему выбору
+	scanner := adapters.NewScanner(cfg.ScannerAddress, " ")   // Пустая команда или команда по вашему выбору
+	printer := adapters.NewPrinter("192.168.252.112", "9100") // Замените на реальные значения или используйте из конфига
 
 	factoryClient := api.NewFactoryClient(cfg.FactoryURL)
+	// Инициализируем принтер
+	// Примечание: IP и порт принтера должны быть добавлены в конфигурацию
+
+	// Инициализируем сервис печати этикеток
+	labelService := services.NewLabelService(
+		printer,
+		filepath.Join("label", "templates"), // Путь к шаблонам этикеток
+		"Худабердиева",                      // Значение по умолчанию для упаковщика
+	)
 	taskService := services.NewTaskService(factoryClient, cfg.LineID)
-	scanService := services.NewProcessTaskService(taskService, scanner, 2*time.Second)
+	scanService := services.NewProcessTaskService(taskService, labelService, scanner, 2*time.Second)
 	// Передаем сервис сканирования в обработчик заданий
 	taskHandlers := handlers.NewTaskHandler(taskService, scanService)
 
