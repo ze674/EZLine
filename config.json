@@ -2,7 +2,8 @@
   "factory_url": "http://192.168.2.75:8081",
   "line_id": 3,
   "storage_path" : "./data",
-  "scanner_address" : "192.168.252.11:2001",
+  "scanner_address" : "192.168.252.111:2001",
+  "printer_address" : "192.168.252.112:9001",
   "code_length" : 31,
   "scanner_answer_noread" : "NOREAD"
 }
