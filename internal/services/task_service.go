@@ -5,24 +5,65 @@ import (
 	"fmt"
 	"github.com/ze674/EZLine/internal/api"
 	"github.com/ze674/EZLine/internal/models"
+	"github.com/ze674/EZLine/internal/repository"
 	"sync"
 )
 
 // TaskService предоставляет методы для работы с заданиями
 type TaskService struct {
-	mu            sync.Mutex
-	factoryClient *api.FactoryClient
-	lineID        int
-	activeTaskID  int // Тут храним ID активного задания
+	mu             sync.Mutex
+	factoryClient  *api.FactoryClient
+	lineID         int
+	activeTaskID   int // Тут храним ID активного задания
+	activeTaskRepo *repository.ActiveTaskRepository
 }
 
 // NewTaskService создает новый сервис для управления заданиями
 func NewTaskService(factoryClient *api.FactoryClient, lineID int) *TaskService {
 	return &TaskService{
-		factoryClient: factoryClient,
-		lineID:        lineID,
-		activeTaskID:  0, // Изначально нет активного задания
+		factoryClient:  factoryClient,
+		lineID:         lineID,
+		activeTaskID:   0, // Изначально нет активного задания
+		activeTaskRepo: repository.NewActiveTaskRepository(),
 	}
+}
+
+// LoadActiveTask загружает ID активного задания из базы данных
+func (s *TaskService) LoadActiveTask() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	taskID, err := s.activeTaskRepo.GetActiveTask()
+	if err != nil {
+		return err
+	}
+
+	if taskID > 0 {
+		// Получаем актуальную информацию о задании с сервера
+		task, err := s.factoryClient.GetTaskByID(taskID)
+		if err != nil {
+			return err
+		}
+
+		// Если задание еще не завершено, устанавливаем его как активное
+		if task.Status != models.TaskStatusCompleted {
+			s.activeTaskID = taskID
+
+			// Если задание не в работе, обновляем его статус
+			if task.Status != models.TaskStatusInProgress {
+				if err := s.factoryClient.UpdateTaskStatus(taskID, models.TaskStatusInProgress); err != nil {
+					return err
+				}
+			}
+		} else {
+			// Задание уже завершено, удаляем его из активных
+			if err := s.activeTaskRepo.ClearActiveTask(); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 // GetLineID возвращает ID производственной линии
@@ -86,6 +127,11 @@ func (s *TaskService) SelectTask(taskID int) error {
 		}
 	}
 
+	err = s.activeTaskRepo.SaveActiveTask(taskID)
+	if err != nil {
+		return fmt.Errorf("ошибка при сохранении активного задания: %w", err)
+	}
+
 	return nil
 }
 
@@ -112,6 +158,10 @@ func (s *TaskService) FinishTask() error {
 
 	// Сбрасываем активное задание
 	s.activeTaskID = 0
+
+	if err := s.activeTaskRepo.ClearActiveTask(); err != nil {
+		return fmt.Errorf("ошибка при очистке активного задания: %w", err)
+	}
 
 	return nil
 }

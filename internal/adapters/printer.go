@@ -9,15 +9,14 @@ import (
 
 // Printer - структура для работы с принтером
 type Printer struct {
-	ip       string
-	port     string
+	address  string
 	conn     net.Conn
 	mu       sync.Mutex
 	isClosed bool
 }
 
-func NewPrinter(ip, port string) *Printer {
-	return &Printer{ip: ip, port: port}
+func NewPrinter(address string) *Printer {
+	return &Printer{address: address}
 }
 
 // Connect устанавливает соединение с принтером
@@ -29,10 +28,9 @@ func (p *Printer) Connect() error {
 		return nil // Соединение уже открыто
 	}
 
-	address := fmt.Sprintf("%s:%s", p.ip, p.port)
-	conn, err := net.DialTimeout("tcp", address, 5*time.Second)
+	conn, err := net.DialTimeout("tcp", p.address, 5*time.Second)
 	if err != nil {
-		return fmt.Errorf("не удалось подключиться к принтеру (%s): %v", address, err)
+		return fmt.Errorf("не удалось подключиться к принтеру (%s): %v", p.address, err)
 	}
 
 	p.conn = conn
