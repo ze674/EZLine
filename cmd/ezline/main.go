@@ -35,7 +35,7 @@ func main() {
 	labelService := services.NewLabelService(
 		printer,
 		filepath.Join("label", "templates"), // Путь к шаблонам этикеток
-		"Худабердиева",                      // Значение по умолчанию для упаковщика
+		"",                                  // Значение по умолчанию для упаковщика
 	)
 	taskService := services.NewTaskService(factoryClient, cfg.LineID)
 	scanService := services.NewProcessTaskService(taskService, labelService, scanner, 2*time.Second)

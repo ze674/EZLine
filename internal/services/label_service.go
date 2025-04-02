@@ -123,6 +123,7 @@ func (s *LabelService) prepareTemplateData(task *models.Task, labelData *models.
 	return data
 }
 
-func (s *LabelService) ChangePacker() error {
-
+// ChangePacker изменяет имя упаковщика
+func (s *LabelService) ChangePacker(newPacker string) {
+	s.Packer = newPacker
 }

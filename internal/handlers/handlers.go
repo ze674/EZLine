@@ -23,6 +23,7 @@ func SetupRoutes(r chi.Router, taskHandler *TaskHandler) {
 	// Добавляем маршруты для управления сканированием
 	r.Post("/scanning/start", taskHandler.StartScanningHandler)
 	r.Post("/scanning/stop", taskHandler.StopScanningHandler)
+	r.Post("/packer/change", taskHandler.ChangePackerHandler)
 }
 
 // homeHandler отображает домашнюю страницу

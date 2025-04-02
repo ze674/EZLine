@@ -47,6 +47,7 @@ func (h *TaskHandler) ListTasksHandler(w http.ResponseWriter, r *http.Request) {
 
 // Обновляем ActiveTaskHandler для передачи статуса сканирования в шаблон
 func (h *TaskHandler) ActiveTaskHandler(w http.ResponseWriter, r *http.Request) {
+
 	// Проверяем, есть ли активное задание
 	activeTaskID := h.taskService.GetActiveTaskID()
 	if activeTaskID == 0 {
@@ -64,9 +65,10 @@ func (h *TaskHandler) ActiveTaskHandler(w http.ResponseWriter, r *http.Request) 
 
 	// Проверяем, запущено ли сканирование
 	isScanning := h.scanService.IsRunning()
+	packer := h.scanService.GetPacker()
 
 	// Отображаем шаблон активного задания
-	component := templates.ActiveTask(task, isScanning)
+	component := templates.ActiveTask(task, isScanning, packer)
 
 	if r.Header.Get("HX-Request") == "true" {
 		component.Render(r.Context(), w)
@@ -135,5 +137,32 @@ func (h *TaskHandler) StopScanningHandler(w http.ResponseWriter, r *http.Request
 	h.scanService.Stop()
 
 	// Перенаправляем обратно на страницу активного задания
+	http.Redirect(w, r, "/active-task", http.StatusSeeOther)
+}
+
+// ChangePacker обрабатывает запрос на изменение упаковщика
+func (h *TaskHandler) ChangePackerHandler(w http.ResponseWriter, r *http.Request) {
+	// Обрабатываем только POST запросы
+	if r.Method != http.MethodPost {
+		http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Получаем новое имя упаковщика из формы
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "Ошибка обработки формы", http.StatusBadRequest)
+		return
+	}
+
+	newPacker := r.FormValue("packer")
+	if newPacker == "" {
+		http.Error(w, "Имя упаковщика не может быть пустым", http.StatusBadRequest)
+		return
+	}
+
+	// Меняем упаковщика в сервисе
+	h.scanService.ChangePacker(newPacker)
+
+	// Перенаправляем на страницу активного задания
 	http.Redirect(w, r, "/active-task", http.StatusSeeOther)
 }

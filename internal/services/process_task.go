@@ -275,4 +275,19 @@ func (s *ProcessTaskService) IsRunning() bool {
 	return s.running
 }
 
+// ChangePacker изменяет упаковщика в сервисе печати этикеток
+func (s *ProcessTaskService) ChangePacker(newPacker string) {
+	if s.labelService != nil {
+		s.labelService.ChangePacker(newPacker)
+	}
+}
+
+// GetPacker возвращает имя текущего упаковщика
+func (s *ProcessTaskService) GetPacker() string {
+	if s.labelService != nil {
+		return s.labelService.Packer
+	}
+	return ""
+}
+
 // GetCurrentProduct возвращает информацию о текущем продукте

@@ -15,7 +15,7 @@ import (
 	"strconv"
 )
 
-func ActiveTask(task models.Task, isScanning bool) templ.Component {
+func ActiveTask(task models.Task, isScanning bool, packer string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -195,7 +195,20 @@ func ActiveTask(task models.Task, isScanning bool) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "</div></div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "</div></div></div></div><div class=\"bg-gray-100 p-6 rounded-lg mt-4\"><h3 class=\"text-xl font-semibold mb-4\">Управление упаковщиком</h3><div><p class=\"text-gray-600 mb-2\">Текущий упаковщик: <span class=\"font-semibold\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var10 string
+		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(packer)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/active_task.templ`, Line: 90, Col: 112}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "</span></p><form method=\"post\" action=\"/packer/change\" class=\"flex items-center space-x-2\"><input type=\"text\" name=\"packer\" placeholder=\"Новый упаковщик\" class=\"border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500\" required> <button type=\"submit\" class=\"bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded\">Применить</button></form></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
