@@ -1,0 +1,46 @@
+# Скомпилированные файлы
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+/bin/
+/dist/
+/cmd/factory/tmp/
+/cmd/ezline/tmp/
+/node_modules/
+
+# Тестовые бинарные файлы и выходные файлы
+*.test
+*.out
+
+# Временные файлы
+*.tmp
+*.bak
+
+# Файлы IDE и редакторов
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Директории зависимостей Go
+/vendor/
+
+# Файлы баз данных
+*.db
+*.sqlite
+
+# Файлы логов
+*.log
+
+# Директории для выходных данных
+/data/
+
+# Файлы окружения
+.env
+.env.local
+
+# Другие системные файлы
+.DS_Store
+Thumbs.db
