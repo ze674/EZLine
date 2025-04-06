@@ -51,6 +51,8 @@ func (p *LayerAggregationProcessor) Start(TaskID int) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	p.cancelFunc = cancel
 
+	go p.process(ctx)
+
 	p.running = true
 
 	return nil
@@ -138,11 +140,10 @@ func (p *LayerAggregationProcessor) connect() error {
 	return nil
 }
 
-func (p *LayerAggregationProcessor) process(ctx context.Context) error {
+func (p *LayerAggregationProcessor) process(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			return nil
 		default:
 		}
 	}

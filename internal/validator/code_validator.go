@@ -18,6 +18,11 @@ type ValidationResult struct {
 	Code    string
 }
 
+type ValidationResults struct {
+	Valid   bool
+	Results []ValidationResult
+}
+
 // CodeValidator проверяет штрих-коды на соответствие требованиям
 type CodeValidator struct {
 	GTIN       string // Код GTIN продукта, который должен содержаться в штрих-коде
@@ -55,4 +60,24 @@ func (v *CodeValidator) ValidateCode(code string) ValidationResult {
 
 	result.Message = "Код валиден"
 	return result
+}
+
+// ValidateCodes проверяет коды и возвращает результат валидации
+func (v *CodeValidator) ValidateCodes(code []string) ValidationResults {
+
+	results := ValidationResults{
+		Valid:   true,
+		Results: []ValidationResult{},
+	}
+
+	for _, c := range code {
+
+		result := v.ValidateCode(c)
+		results.Results = append(results.Results, result)
+		if !result.Valid {
+			results.Valid = false
+		}
+	}
+
+	return results
 }
