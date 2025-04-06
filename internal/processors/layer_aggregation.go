@@ -1,6 +1,7 @@
 package processors
 
 import (
+	"context"
 	"fmt"
 	"github.com/ze674/EZLine/internal/models"
 	"sync"
@@ -9,6 +10,7 @@ import (
 type LayerAggregationProcessor struct {
 	mu          sync.Mutex
 	running     bool
+	cancelFunc  context.CancelFunc
 	product     *models.Product
 	task        *models.Task
 	dataService DataService
@@ -45,18 +47,42 @@ func (p *LayerAggregationProcessor) Start(TaskID int) error {
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
+	// Создаем контекст, который можно будет отменить при остановке
+	ctx, cancel := context.WithCancel(context.Background())
+	p.cancelFunc = cancel
+
 	p.running = true
 
 	return nil
 }
 
+// Stop останавливает процессор
 func (p *LayerAggregationProcessor) Stop() error {
 	op := "processors.LayerAggregationProcessor.Stop"
 
 	var err error
 
+	if !p.running {
+		return nil
+	}
+
 	p.mu.Lock()
 	defer p.mu.Unlock()
+
+	// Отменяем контекст, что приведет к завершению цикла сканирования
+	if p.cancelFunc != nil {
+		p.cancelFunc()
+		p.cancelFunc = nil
+	}
+
+	// Закрываем соединение с принтером
+	if err = p.printer.Close(); err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+	// Закрываем соединение с камерой
+	if err = p.camera.Close(); err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
 
 	return nil
 }
@@ -110,4 +136,14 @@ func (p *LayerAggregationProcessor) connect() error {
 	}
 
 	return nil
+}
+
+func (p *LayerAggregationProcessor) process(ctx context.Context) error {
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		default:
+		}
+	}
 }
