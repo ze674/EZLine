@@ -1,72 +1,74 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"os"
-	"strings"
+	"strconv"
 )
 
+// GenerateITF14 конвертирует EAN-13 в ITF-14
+func GenerateITF14(ean13 string) (string, error) {
+	// Проверяем длину EAN-13
+	if len(ean13) != 13 {
+		return "", fmt.Errorf("EAN-13 должен содержать 13 цифр")
+	}
+
+	// Убираем последнюю контрольную цифру из EAN-13
+	baseCode := ean13[:12]
+
+	// Добавляем начальную цифру упаковки (1)
+	itf14 := "1" + baseCode
+
+	// Вычисляем контрольную цифру
+	checksum := calculateITF14Checksum(itf14)
+
+	// Добавляем контрольную цифру
+	itf14 += strconv.Itoa(checksum)
+
+	return itf14, nil
+}
+
+// calculateITF14Checksum вычисляет контрольную цифру для ITF-14
+func calculateITF14Checksum(code string) int {
+	// Статические веса для ITF-14
+	weights := []int{3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1}
+
+	// Сумма произведений цифр на веса
+	total := 0
+	for i := 0; i < len(code); i++ {
+		digit, _ := strconv.Atoi(string(code[i]))
+		total += digit * weights[i]
+	}
+
+	// Вычисление контрольной цифры
+	checksum := (10 - (total % 10)) % 10
+	return checksum
+}
+
 func main() {
-	if len(os.Args) < 3 {
-		fmt.Println("Использование: program input.txt output.txt")
-		return
-	}
-
-	inputFile := os.Args[1]
-	outputFile := os.Args[2]
-
-	// Открываем входной файл
-	input, err := os.Open(inputFile)
+	// Пример использования
+	ean13 := "4601234567890"
+	itf14, err := GenerateITF14(ean13)
 	if err != nil {
-		fmt.Printf("Ошибка при открытии входного файла: %v\n", err)
+		fmt.Println("Ошибка:", err)
 		return
 	}
-	defer input.Close()
+	fmt.Println("EAN-13:", ean13)
+	fmt.Println("ITF-14:", itf14)
 
-	// Создаем выходной файл
-	output, err := os.Create(outputFile)
-	if err != nil {
-		fmt.Printf("Ошибка при создании выходного файла: %v\n", err)
-		return
+	// Дополнительные тесты
+	testCases := []string{
+		"4601234567890",
+		"1234567890123",
+		"9876543210987",
+		"4607054761244",
 	}
-	defer output.Close()
 
-	// Записываем начало XML
-	output.WriteString("<root> \n")
-
-	scanner := bufio.NewScanner(input)
-	var currentParent string
-
-	// Построчное чтение входного файла
-	for scanner.Scan() {
-		line := scanner.Text()
-
-		// Проверяем, является ли строка идентификатором группы
-		if !strings.HasPrefix(line, " ") && !strings.HasPrefix(line, "\t") {
-			// Это строка с идентификатором группы
-			parts := strings.Split(line, " [")
-			if len(parts) > 0 {
-				currentParent = parts[0]
-			}
+	for _, testEAN := range testCases {
+		result, err := GenerateITF14(testEAN)
+		if err != nil {
+			fmt.Printf("Ошибка для %s: %v\n", testEAN, err)
 		} else {
-			// Это строка с кодом
-			code := strings.TrimSpace(line)
-			if code != "" {
-				// Форматируем и записываем XML-элемент
-				xmlElement := fmt.Sprintf("    <CodeNamesSerial><cCodeNameSerial>%s</cCodeNameSerial><cCodeNameSerialParent>%s</cCodeNameSerialParent><cOutID>WMS104388</cOutID></CodeNamesSerial>\n",
-					code, currentParent)
-				output.WriteString(xmlElement)
-			}
+			fmt.Printf("EAN-13: %s, ITF-14: %s\n", testEAN, result)
 		}
 	}
-
-	// Записываем конец XML
-	output.WriteString("</root>")
-
-	if err := scanner.Err(); err != nil {
-		fmt.Printf("Ошибка при чтении входного файла: %v\n", err)
-	}
-
-	fmt.Println("Преобразование успешно завершено!")
 }

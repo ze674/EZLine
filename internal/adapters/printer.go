@@ -39,6 +39,24 @@ func (p *Printer) Connect() error {
 }
 
 // Send отправляет данные на принтер
+func (p *Printer) Print(data string) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	if p.conn == nil || p.isClosed {
+		return fmt.Errorf("соединение с принтером не установлено")
+	}
+
+	_, err := p.conn.Write([]byte(data))
+	if err != nil {
+		p.isClosed = true
+		return fmt.Errorf("ошибка отправки данных: %v", err)
+	}
+
+	return nil
+}
+
+// Send отправляет данные на принтер
 func (p *Printer) Send(data string) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()

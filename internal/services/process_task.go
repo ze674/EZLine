@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/ze674/EZLine/internal/models"
+	"github.com/ze674/EZLine/internal/repository"
 	"github.com/ze674/EZLine/internal/validator"
 	"path/filepath"
 	"strconv"
@@ -41,20 +42,26 @@ type ProcessTaskService struct {
 	QuantityPerBox  int
 	serialGenerator *SerialGenerator
 	storagePath     string // Добавляем путь для хранения файлов
+
+	// Новые поля
+	itemRepository      *repository.ItemRepository
+	containerRepository *repository.ContainerRepository
 }
 
 func NewProcessTaskService(dataService DataService, labelService *LabelService, scanner scanner, interval time.Duration) *ProcessTaskService { // Используем подкаталог "serials" в текущей директории
 	storagePath := filepath.Join(".", "data", "serials")
 
 	return &ProcessTaskService{
-		DataService:     dataService,
-		scanner:         scanner,
-		interval:        interval,
-		running:         false,
-		currentTask:     nil,
-		labelService:    labelService,
-		serialGenerator: NewSerialGenerator(storagePath),
-		storagePath:     storagePath,
+		DataService:         dataService,
+		scanner:             scanner,
+		interval:            interval,
+		running:             false,
+		currentTask:         nil,
+		labelService:        labelService,
+		serialGenerator:     NewSerialGenerator(storagePath),
+		storagePath:         storagePath,
+		itemRepository:      repository.NewItemRepository(),
+		containerRepository: repository.NewContainerRepository(),
 	}
 }
 
@@ -112,8 +119,8 @@ func (s *ProcessTaskService) Start(id int) error {
 
 	// Получаем ожидаемое количество кодов из LabelData
 	s.QuantityPerBox = 1 // По умолчанию
-	if s.labelData != nil && s.labelData.BoxQuantity != "" {
-		if qty, err := strconv.Atoi(s.labelData.BoxQuantity); err == nil {
+	if s.labelData != nil && s.labelData.QuantityBox != "" {
+		if qty, err := strconv.Atoi(s.labelData.QuantityBox); err == nil {
 			s.QuantityPerBox = qty
 		}
 	}
@@ -244,7 +251,7 @@ func (s *ProcessTaskService) runScanLoop(ctx context.Context) {
 				}
 
 				fmt.Printf("Все %d кодов валидны! Серийный номер коробки: %s\n", len(codes), boxSerial)
-				err = s.labelService.PrintLabel(s.currentTask, s.labelData, sn)
+				err = s.labelService.PrintLabel(s.currentTask, s.currentProduct, sn)
 				if err != nil {
 					fmt.Printf("Ошибка печати этикетки: %v\n", err)
 				}

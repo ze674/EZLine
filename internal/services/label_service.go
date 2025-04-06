@@ -1,3 +1,5 @@
+// internal/services/label_service.go
+
 package services
 
 import (
@@ -24,6 +26,7 @@ func NewLabelService(printer *adapters.Printer, templatePath, defaultPacker stri
 		printer:      printer,
 		templatePath: templatePath,
 		Packer:       defaultPacker,
+		connected:    false,
 	}
 }
 
@@ -57,73 +60,81 @@ func (s *LabelService) Close() error {
 	return nil
 }
 
-// PrintLabel подготавливает и печатает этикетку на основе данных задания и продукта
-func (s *LabelService) PrintLabel(task *models.Task, labelData *models.LabelData, sn string) error {
-	// Создаем данные для шаблона
-	data := s.prepareTemplateData(task, labelData, sn)
+// RenderTemplate рендерит этикетку в строку для печати
+func (s *LabelService) RenderTemplate(labelData models.LabelData, templateName string) (string, error) {
+	if templateName == "" {
+		templateName = "standard.txt" // Шаблон по умолчанию
+	}
 
 	// Загружаем шаблон
-	tmplPath := filepath.Join(s.templatePath, "standard.txt")
+	tmplPath := filepath.Join(s.templatePath, templateName)
 	tmpl, err := template.ParseFiles(tmplPath)
 	if err != nil {
-		return fmt.Errorf("ошибка при загрузке шаблона: %w", err)
+		return "", fmt.Errorf("ошибка при загрузке шаблона %s: %w", tmplPath, err)
 	}
 
 	// Заполняем шаблон данными
 	result := new(strings.Builder)
-	err = tmpl.Execute(result, data)
+	err = tmpl.Execute(result, labelData)
 	if err != nil {
-		return fmt.Errorf("ошибка при заполнении шаблона: %w", err)
+		return "", fmt.Errorf("ошибка при заполнении шаблона: %w", err)
 	}
 
+	return result.String(), nil
+}
+
+// Print отправляет подготовленный контент на печать
+func (s *LabelService) Print(content string) error {
 	// Проверяем, что соединение установлено
 	if !s.connected {
-		return fmt.Errorf("соединение с принтером не установлено")
+		if err := s.Connect(); err != nil {
+			return fmt.Errorf("не удалось установить соединение с принтером: %w", err)
+		}
 	}
 
-	err = s.printer.Send(result.String())
+	// Отправляем на печать
+	err := s.printer.Send(content)
 	if err != nil {
-		return fmt.Errorf("ошибка при отправке этикетки на печать: %w", err)
+		return fmt.Errorf("ошибка при отправке на печать: %w", err)
 	}
 
 	return nil
 }
 
-// prepareTemplateData подготавливает данные для шаблона этикетки
-func (s *LabelService) prepareTemplateData(task *models.Task, labelData *models.LabelData, sn string) *models.LabelTemplateData {
-	// Генерируем серийный номер на основе номера партии и, например, времени
-	serialNumber := sn
-
-	// Форматируем дату для штрих-кода
-	barcodeDate := models.FormatBarcodeDate(task.Date)
-	batchNumber := models.FormateBatchNumber(task.BatchNumber)
-
-	// Заполняем структуру данными
-	data := &models.LabelTemplateData{
-		// Данные из LabelData
-		Article:     labelData.Article,
-		GTIN:        labelData.GTIN,
-		Header:      labelData.Header,
-		Name:        labelData.LabelName,
-		Standard:    labelData.Standard,
-		Weight:      labelData.UnitWeight,
-		QuantityBox: labelData.BoxQuantity,
-		WeightBox:   labelData.BoxWeight,
-
-		// Данные из задания
-		Date:        task.Date,
-		BatchNumber: batchNumber,
-		BarcodeDate: barcodeDate,
-
-		// Дополнительные данные
-		Packer:       s.Packer,
-		SerialNumber: serialNumber,
+// RenderAndPrint комбинирует рендеринг и печать в один удобный метод
+func (s *LabelService) RenderAndPrint(labelData models.LabelData, templateName string) error {
+	content, err := s.RenderTemplate(labelData, templateName)
+	if err != nil {
+		return err
 	}
 
-	return data
+	return s.Print(content)
 }
 
 // ChangePacker изменяет имя упаковщика
 func (s *LabelService) ChangePacker(newPacker string) {
 	s.Packer = newPacker
+}
+
+// GetPacker возвращает текущее имя упаковщика
+func (s *LabelService) GetPacker() string {
+	return s.Packer
+}
+
+// PrintLabel - удобный метод для печати с использованием Builder
+func (s *LabelService) PrintLabel(task *models.Task, product *models.Product, serialNumber string) error {
+	// Создаем билдер
+	labelBuilder := models.NewLabelBuilder()
+
+	// Добавляем данные
+	labelBuilder.WithProduct(*product)
+	labelBuilder.WithTask(*task)
+	labelBuilder.WithPacker(s.GetPacker())
+	labelBuilder.WithSerialNumber(serialNumber)
+
+	// Собираем этикетку
+	labelData := labelBuilder.Build()
+
+	// Рендерим и печатаем
+	return s.RenderAndPrint(labelData, "standard.txt")
 }
