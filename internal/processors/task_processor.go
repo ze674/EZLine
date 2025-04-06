@@ -1,6 +1,9 @@
 package processors
 
-import "github.com/ze674/EZLine/internal/models"
+import (
+	"context"
+	"github.com/ze674/EZLine/internal/models"
+)
 
 // TaskProcessor определяет общий интерфейс для обработки заданий
 type TaskProcessor interface {
@@ -29,4 +32,13 @@ type Printer interface {
 	Print(data string) error
 	Connect() error
 	Close() error
+}
+
+// TriggerSource представляет источник триггеров для сканирования
+type TriggerSource interface {
+	// Start запускает источник и возвращает канал с сигналами для сканирования
+	Start(ctx context.Context) (<-chan struct{}, error)
+
+	// Stop останавливает источник триггеров
+	Stop() error
 }

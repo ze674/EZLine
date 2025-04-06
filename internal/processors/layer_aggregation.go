@@ -8,20 +8,22 @@ import (
 )
 
 type LayerAggregationProcessor struct {
-	mu          sync.Mutex
-	running     bool
-	cancelFunc  context.CancelFunc
-	product     *models.Product
-	task        *models.Task
-	dataService DataService
-	camera      CodeReader
-	printer     Printer
+	mu            sync.Mutex
+	running       bool
+	cancelFunc    context.CancelFunc
+	product       *models.Product
+	task          *models.Task
+	dataService   DataService
+	triggerSource TriggerSource
+	camera        CodeReader
+	printer       Printer
 }
 
-func NewLayerAggregationProcessor(dataService DataService, scanner CodeReader) *LayerAggregationProcessor {
+func NewLayerAggregationProcessor(dataService DataService, scanner CodeReader, source TriggerSource) *LayerAggregationProcessor {
 	return &LayerAggregationProcessor{
-		dataService: dataService,
-		camera:      scanner,
+		dataService:   dataService,
+		camera:        scanner,
+		triggerSource: source,
 	}
 }
 
@@ -51,7 +53,7 @@ func (p *LayerAggregationProcessor) Start(TaskID int) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	p.cancelFunc = cancel
 
-	go p.process(ctx)
+	go p.runScanningLoop(ctx)
 
 	p.running = true
 
@@ -140,11 +142,17 @@ func (p *LayerAggregationProcessor) connect() error {
 	return nil
 }
 
-func (p *LayerAggregationProcessor) process(ctx context.Context) {
+func (p *LayerAggregationProcessor) runScanningLoop(ctx context.Context) {
+	scanTrigger, err := p.triggerSource.Start(ctx)
+	if err != nil {
+		go p.Stop()
+	}
 	for {
 		select {
+		case <-scanTrigger:
+
 		case <-ctx.Done():
-		default:
+
 		}
 	}
 }
