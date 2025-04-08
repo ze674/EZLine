@@ -24,7 +24,7 @@ func NewTimerTrigger(interval time.Duration) *TimerTrigger {
 }
 
 // Start запускает таймер и возвращает канал с сигналами
-func (t *TimerTrigger) Start(ctx context.Context) error {
+func (t *TimerTrigger) WaitSignal(ctx context.Context) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -51,6 +51,7 @@ func (t *TimerTrigger) Start(ctx context.Context) error {
 				// Отправляем сигнал в канал
 				select {
 				case triggerChan <- struct{}{}:
+					fmt.Println("Сигнал отправлен")
 					// Успешно отправили сигнал
 				default:
 					// Канал заблокирован, пропускаем этот тик
@@ -84,6 +85,6 @@ func (t *TimerTrigger) Stop() error {
 	return nil
 }
 
-func (t *TimerTrigger) Signal() <-chan struct{} {
+func (t *TimerTrigger) SignalChan() <-chan struct{} {
 	return t.signal
 }

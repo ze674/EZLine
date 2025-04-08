@@ -4,29 +4,37 @@ import (
 	"context"
 	"fmt"
 	"github.com/ze674/EZLine/internal/models"
+	"github.com/ze674/EZLine/internal/repository"
 	"github.com/ze674/EZLine/internal/validator"
+	"strconv"
 	"strings"
 	"sync"
 )
 
+var serial = 1
+
 type LayerAggregationProcessor struct {
-	mu            sync.Mutex
-	running       bool
-	cancelFunc    context.CancelFunc
-	product       *models.Product
-	task          *models.Task
-	dataService   DataService
-	triggerSource TriggerSource
-	camera        CodeReader
-	printer       Printer
-	codeValidator *validator.CodeValidator
+	mu                  sync.Mutex
+	running             bool
+	cancelFunc          context.CancelFunc
+	product             *models.Product
+	task                *models.Task
+	dataService         DataService
+	triggerSource       TriggerSource
+	camera              CodeReader
+	printer             Printer
+	codeValidator       *validator.CodeValidator
+	itemRepository      *repository.ItemRepository
+	containerRepository *repository.ContainerRepository
 }
 
 func NewLayerAggregationProcessor(dataService DataService, scanner CodeReader, source TriggerSource) *LayerAggregationProcessor {
 	return &LayerAggregationProcessor{
-		dataService:   dataService,
-		camera:        scanner,
-		triggerSource: source,
+		dataService:         dataService,
+		camera:              scanner,
+		triggerSource:       source,
+		itemRepository:      repository.NewItemRepository(),
+		containerRepository: repository.NewContainerRepository(),
 	}
 }
 
@@ -46,6 +54,7 @@ func (p *LayerAggregationProcessor) Start(TaskID int) error {
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
+	fmt.Println(p.task)
 
 	err = p.connect()
 	if err != nil {
@@ -59,7 +68,7 @@ func (p *LayerAggregationProcessor) Start(TaskID int) error {
 	p.cancelFunc = cancel
 
 	// Запускаем источник
-	err = p.triggerSource.Start(ctx)
+	err = p.triggerSource.WaitSignal(ctx)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
@@ -89,16 +98,21 @@ func (p *LayerAggregationProcessor) Stop() error {
 		p.cancelFunc()
 		p.cancelFunc = nil
 	}
+	if p.printer != nil {
 
-	// Закрываем соединение с принтером
-	if err = p.printer.Close(); err != nil {
-		return fmt.Errorf("%s: %w", op, err)
+		// Закрываем соединение с принтером
+		if err = p.printer.Close(); err != nil {
+			return fmt.Errorf("%s: %w", op, err)
+		}
 	}
-	// Закрываем соединение с камерой
-	if err = p.camera.Close(); err != nil {
-		return fmt.Errorf("%s: %w", op, err)
+	if p.camera != nil {
+		// Закрываем соединение с камерой
+		if err = p.camera.Close(); err != nil {
+			return fmt.Errorf("%s: %w", op, err)
+		}
 	}
 
+	p.running = false
 	return nil
 }
 
@@ -132,24 +146,26 @@ func (p *LayerAggregationProcessor) getData(TaskID int) error {
 
 func (p *LayerAggregationProcessor) connect() error {
 	op := "processors.LayerAggregationProcessor.connect"
-
+	fmt.Println("Connecting to printer and camera")
 	var err error
 
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
 	//Подключиться к камере
-	err = p.camera.Connect()
-	if err != nil {
-		return fmt.Errorf("%s: %w", op, err)
+	if p.camera != nil {
+		err = p.camera.Connect()
+		if err != nil {
+			return fmt.Errorf("%s: %w", op, err)
+		}
 	}
-
+	fmt.Println("Connected to camera")
 	//Подключиться к принтеру
-	err = p.printer.Connect()
-	if err != nil {
-		return fmt.Errorf("%s: %w", op, err)
+	if p.printer != nil {
+		err = p.printer.Connect()
+		if err != nil {
+			return fmt.Errorf("%s: %w", op, err)
+		}
 	}
 
+	fmt.Println("Connected to printer")
 	return nil
 }
 
@@ -157,7 +173,8 @@ func (p *LayerAggregationProcessor) runScanningLoop(ctx context.Context) {
 
 	for {
 		select {
-		case <-p.triggerSource.Signal():
+		case <-p.triggerSource.SignalChan():
+			fmt.Println("Scanning started")
 
 			// Сканируем слой
 			codes, err := p.scanLayer()
@@ -167,7 +184,7 @@ func (p *LayerAggregationProcessor) runScanningLoop(ctx context.Context) {
 
 			// Проверяем количество кодов
 			//TODO: Сравнить с кол-вом продуктов в коробе
-			if len(codes) != 6 {
+			if len(codes) != 2 {
 				continue
 			}
 
@@ -183,13 +200,21 @@ func (p *LayerAggregationProcessor) runScanningLoop(ctx context.Context) {
 				continue
 			}
 
+			serialStr := strconv.Itoa(serial)
+
+			err = p.SaveContainerWithItems(serialStr, codes)
+			if err != nil {
+				continue
+			}
+			serial++
+
 			//TODO: Проверяем уникальность кодов в задании
 
-			//TODO: Сохраняем агрегат в базу
 			//TODO: Добавляем в список кодов для проверки на уникальность
 			//TODO: Печатаем этикетку
 
 		case <-ctx.Done():
+			return
 
 		}
 	}
@@ -226,4 +251,38 @@ func (p *LayerAggregationProcessor) checkDuplicatesInLayer(codes []string) bool 
 
 	// Дубликатов не найдено
 	return false
+}
+
+// SaveContainerWithItems сохраняет контейнер и связанные с ним товары в базу данных
+func (p *LayerAggregationProcessor) SaveContainerWithItems(containerCode string, itemCodes []string) error {
+	// 1. Создаем контейнер
+	containerID, err := p.containerRepository.CreateContainer(
+		containerCode,
+		p.task.ID,
+		repository.StatusCreated,
+	)
+	if err != nil {
+		return fmt.Errorf("ошибка создания контейнера: %w", err)
+	}
+
+	// 2. Создаем товары и привязываем их к контейнеру
+	for _, code := range itemCodes {
+		// Создаем запись о товаре
+		itemID, err := p.itemRepository.CreateItem(
+			code,
+			p.task.ID,
+			repository.StatusScanned,
+		)
+		if err != nil {
+			return fmt.Errorf("ошибка создания товара: %w", err)
+		}
+
+		// Привязываем товар к контейнеру
+		err = p.itemRepository.AssignItemToContainer(itemID, containerID)
+		if err != nil {
+			return fmt.Errorf("ошибка привязки товара к контейнеру: %w", err)
+		}
+	}
+
+	return nil
 }

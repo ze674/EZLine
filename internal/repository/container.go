@@ -8,6 +8,10 @@ import (
 	"time"
 )
 
+const (
+	StatusCreated = "created"
+)
+
 type ContainerRepository struct {
 	db *sql.DB
 }

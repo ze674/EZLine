@@ -35,6 +35,7 @@ func NewScanner(address, scanCommand string) *Scanner {
 // Connect устанавливает соединение
 func (s *Scanner) Connect() error {
 	op := "scanner.tcp.Connect"
+	fmt.Println(op)
 	client, err := net.DialTimeout("tcp", s.address, connectTimeout) // Устанавливаем соединение
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
@@ -62,6 +63,12 @@ func (s *Scanner) Close() error {
 // Scan выполняет цикл сканирования
 func (s *Scanner) Scan() (string, error) {
 	op := "scanner.tcp.Scan"
+	if s.client == nil {
+		if err := s.Connect(); err != nil {
+			return "", fmt.Errorf("%s: %w", op, err)
+		}
+	}
+	fmt.Println(op)
 
 	if err := s.SendCommand(s.scanCommand); err != nil { // Отправляем команду сканирования
 		return "", fmt.Errorf("%s: %w", op, err)

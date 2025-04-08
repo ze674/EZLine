@@ -8,14 +8,20 @@ import (
 	"strconv"
 )
 
+type ScanningService interface {
+	Start(taskID int) error
+	Stop() error
+	IsRunning() bool
+}
+
 // Добавляем новое поле в структуру TaskHandler
 type TaskHandler struct {
 	taskService *services.TaskService
-	scanService *services.ProcessTaskService // Добавляем сервис сканирования
+	scanService ScanningService // Добавляем сервис сканирования
 }
 
 // Обновляем конструктор
-func NewTaskHandler(taskService *services.TaskService, scanService *services.ProcessTaskService) *TaskHandler {
+func NewTaskHandler(taskService *services.TaskService, scanService ScanningService) *TaskHandler {
 	return &TaskHandler{
 		taskService: taskService,
 		scanService: scanService,
@@ -65,8 +71,8 @@ func (h *TaskHandler) ActiveTaskHandler(w http.ResponseWriter, r *http.Request) 
 
 	// Проверяем, запущено ли сканирование
 	isScanning := h.scanService.IsRunning()
-	packer := h.scanService.GetPacker()
-
+	//packer := h.scanService.GetPacker()
+	packer := ""
 	// Отображаем шаблон активного задания
 	component := templates.ActiveTask(task, isScanning, packer)
 
@@ -140,29 +146,29 @@ func (h *TaskHandler) StopScanningHandler(w http.ResponseWriter, r *http.Request
 	http.Redirect(w, r, "/active-task", http.StatusSeeOther)
 }
 
-// ChangePacker обрабатывает запрос на изменение упаковщика
-func (h *TaskHandler) ChangePackerHandler(w http.ResponseWriter, r *http.Request) {
-	// Обрабатываем только POST запросы
-	if r.Method != http.MethodPost {
-		http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
-		return
-	}
-
-	// Получаем новое имя упаковщика из формы
-	if err := r.ParseForm(); err != nil {
-		http.Error(w, "Ошибка обработки формы", http.StatusBadRequest)
-		return
-	}
-
-	newPacker := r.FormValue("packer")
-	if newPacker == "" {
-		http.Error(w, "Имя упаковщика не может быть пустым", http.StatusBadRequest)
-		return
-	}
-
-	// Меняем упаковщика в сервисе
-	h.scanService.ChangePacker(newPacker)
-
-	// Перенаправляем на страницу активного задания
-	http.Redirect(w, r, "/active-task", http.StatusSeeOther)
-}
+//// ChangePacker обрабатывает запрос на изменение упаковщика
+//func (h *TaskHandler) ChangePackerHandler(w http.ResponseWriter, r *http.Request) {
+//	// Обрабатываем только POST запросы
+//	if r.Method != http.MethodPost {
+//		http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
+//		return
+//	}
+//
+//	// Получаем новое имя упаковщика из формы
+//	if err := r.ParseForm(); err != nil {
+//		http.Error(w, "Ошибка обработки формы", http.StatusBadRequest)
+//		return
+//	}
+//
+//	newPacker := r.FormValue("packer")
+//	if newPacker == "" {
+//		http.Error(w, "Имя упаковщика не может быть пустым", http.StatusBadRequest)
+//		return
+//	}
+//
+//	// Меняем упаковщика в сервисе
+//	h.scanService.ChangePacker(newPacker)
+//
+//	// Перенаправляем на страницу активного задания
+//	http.Redirect(w, r, "/active-task", http.StatusSeeOther)
+//}

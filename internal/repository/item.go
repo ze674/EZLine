@@ -7,6 +7,11 @@ import (
 	"github.com/ze674/EZLine/internal/models"
 )
 
+const (
+	StatusAggregated = "aggregated"
+	StatusScanned    = "scanned"
+)
+
 type ItemRepository struct {
 	db *sql.DB
 }
@@ -29,11 +34,21 @@ func (r *ItemRepository) CreateItem(code string, taskID int, status string) (int
 	return result.LastInsertId()
 }
 
+func (r *ItemRepository) CreateItems(codes []string, taskID int, status string) error {
+	for _, code := range codes {
+		_, err := r.CreateItem(code, taskID, status)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // AssignItemToContainer привязывает товар к контейнеру
 func (r *ItemRepository) AssignItemToContainer(itemID, containerID int64) error {
 	_, err := r.db.Exec(
-		"UPDATE items SET container_id = ?, status = 'aggregated' WHERE id = ?",
-		containerID, itemID)
+		"UPDATE items SET container_id = ?, status = ? WHERE id = ?",
+		containerID, StatusAggregated, itemID)
 	return err
 }
 

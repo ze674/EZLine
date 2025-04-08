@@ -15,8 +15,8 @@ type Config struct {
 	TemplatePath   string `json:"template_path"`         // Путь к шаблонам этикеток
 	DbPath         string `json:"db_path"`               // Путь к базе данных
 	CodeLength     int    `json:"code_length"`           // Длина кода
-	ScanCommand    string `json:"scanner_answer_noread"` // Команда сканирования
-	AnswerNoRead   string `json:"scanner_scan_command"`  // Ответ на команду сканирования
+	ScanCommand    string `json:"scanner_scan_command"`  // Команда сканирования
+	AnswerNoRead   string `json:"scanner_answer_noread"` // Ответ на команду сканирования
 }
 
 // DefaultConfig возвращает конфигурацию по умолчанию

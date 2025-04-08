@@ -36,9 +36,9 @@ type Printer interface {
 
 // TriggerSource представляет источник триггеров для сканирования
 type TriggerSource interface {
-	Signal() <-chan struct{}
+	SignalChan() <-chan struct{}
 	// Start запускает источник и возвращает канал с сигналами для сканирования
-	Start(ctx context.Context) error
+	WaitSignal(ctx context.Context) error
 	// Stop останавливает источник триггеров
 	Stop() error
 }
