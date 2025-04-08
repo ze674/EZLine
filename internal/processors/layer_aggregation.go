@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/ze674/EZLine/internal/models"
+	"github.com/ze674/EZLine/internal/validator"
+	"strings"
 	"sync"
 )
 
@@ -17,6 +19,7 @@ type LayerAggregationProcessor struct {
 	triggerSource TriggerSource
 	camera        CodeReader
 	printer       Printer
+	codeValidator *validator.CodeValidator
 }
 
 func NewLayerAggregationProcessor(dataService DataService, scanner CodeReader, source TriggerSource) *LayerAggregationProcessor {
@@ -49,9 +52,17 @@ func (p *LayerAggregationProcessor) Start(TaskID int) error {
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
+	p.codeValidator = validator.NewCodeValidator(p.product.GTIN, 31)
+
 	// Создаем контекст, который можно будет отменить при остановке
 	ctx, cancel := context.WithCancel(context.Background())
 	p.cancelFunc = cancel
+
+	// Запускаем источник
+	err = p.triggerSource.Start(ctx)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
 
 	go p.runScanningLoop(ctx)
 
@@ -143,16 +154,76 @@ func (p *LayerAggregationProcessor) connect() error {
 }
 
 func (p *LayerAggregationProcessor) runScanningLoop(ctx context.Context) {
-	scanTrigger, err := p.triggerSource.Start(ctx)
-	if err != nil {
-		go p.Stop()
-	}
+
 	for {
 		select {
-		case <-scanTrigger:
+		case <-p.triggerSource.Signal():
+
+			// Сканируем слой
+			codes, err := p.scanLayer()
+			if err != nil || codes == nil {
+				continue
+			}
+
+			// Проверяем количество кодов
+			//TODO: Сравнить с кол-вом продуктов в коробе
+			if len(codes) != 6 {
+				continue
+			}
+
+			// Проверяем наличие дубликатов в слое
+			if p.checkDuplicatesInLayer(codes) {
+				continue
+			}
+
+			//Валидируем коды
+			validationResult := p.codeValidator.ValidateCodes(codes)
+
+			if !validationResult.Valid {
+				continue
+			}
+
+			//TODO: Проверяем уникальность кодов в задании
+
+			//TODO: Сохраняем агрегат в базу
+			//TODO: Добавляем в список кодов для проверки на уникальность
+			//TODO: Печатаем этикетку
 
 		case <-ctx.Done():
 
 		}
 	}
+}
+
+func (p *LayerAggregationProcessor) scanLayer() ([]string, error) {
+	op := "processors.LayerAggregationProcessor.scanLayer"
+
+	resp, err := p.camera.Scan()
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	if resp == "NoRead" {
+		return nil, nil
+	}
+
+	codes := strings.Fields(resp)
+
+	return codes, nil
+}
+
+// Проверяем наличие дубликатов в слое
+func (p *LayerAggregationProcessor) checkDuplicatesInLayer(codes []string) bool {
+	seen := make(map[string]bool)
+
+	for _, code := range codes {
+		if seen[code] {
+			// Нашли дубликат, можно сразу вернуть true
+			return true
+		}
+		seen[code] = true
+	}
+
+	// Дубликатов не найдено
+	return false
 }

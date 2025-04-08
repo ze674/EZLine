@@ -13,6 +13,7 @@ type TimerTrigger struct {
 	running  bool
 	mu       sync.Mutex
 	cancel   context.CancelFunc
+	signal   chan struct{}
 }
 
 // NewTimerTrigger создает новый источник триггеров на основе таймера
@@ -23,12 +24,12 @@ func NewTimerTrigger(interval time.Duration) *TimerTrigger {
 }
 
 // Start запускает таймер и возвращает канал с сигналами
-func (t *TimerTrigger) Start(ctx context.Context) (<-chan struct{}, error) {
+func (t *TimerTrigger) Start(ctx context.Context) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
 	if t.running {
-		return nil, fmt.Errorf("таймер уже запущен")
+		return fmt.Errorf("таймер уже запущен")
 	}
 
 	triggerChan := make(chan struct{})
@@ -60,8 +61,9 @@ func (t *TimerTrigger) Start(ctx context.Context) (<-chan struct{}, error) {
 		}
 	}()
 
+	t.signal = triggerChan
 	t.running = true
-	return triggerChan, nil
+	return nil
 }
 
 // Stop останавливает таймер
@@ -80,4 +82,8 @@ func (t *TimerTrigger) Stop() error {
 
 	t.running = false
 	return nil
+}
+
+func (t *TimerTrigger) Signal() <-chan struct{} {
+	return t.signal
 }
