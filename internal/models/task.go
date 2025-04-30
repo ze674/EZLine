@@ -6,7 +6,9 @@ import "time"
 const (
 	TaskStatusNew        = "новое"
 	TaskStatusInProgress = "в работе"
+	TaskStatusPaused     = "приостановлено"
 	TaskStatusCompleted  = "завершено"
+	TaskStatusSent       = "отправлено"
 )
 
 // Task представляет производственное задание

@@ -2,7 +2,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/ze674/EZLine/internal/adapters"
@@ -12,9 +11,9 @@ import (
 	"github.com/ze674/EZLine/internal/handlers"
 	"github.com/ze674/EZLine/internal/processors"
 	"github.com/ze674/EZLine/internal/services"
-	"github.com/ze674/EZLine/internal/utils"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -26,34 +25,30 @@ func main() {
 		cfg = config.DefaultConfig()
 	}
 
-	fmt.Printf("Scan coomand is %s, Noread answer is %s", cfg.ScanCommand, cfg.AnswerNoRead)
-
-	// Инициализируем TCP сканер
-	scanner := adapters.NewScanner(cfg.ScannerAddress, cfg.ScanCommand) // Пустая команда или команда по вашему выбору
-	//printer := adapters.NewPrinter(cfg.PrinterAddress)
-	// Инициализируем соединение с базой данных
-
+	// Подключаемся к базе данных
 	if err := database.Connect(cfg.DbPath); err != nil {
 		log.Fatalf("Ошибка подключения к базе данных: %v", err)
 	}
 	defer database.Close()
-	// Замените на реальные значения или используйте из конфига
 
 	factoryClient := api.NewFactoryClient(cfg.FactoryURL)
 
-	//// Инициализируем сервис печати этикеток
-	//labelService := services.NewLabelService(
-	//	printer,
-	//	cfg.TemplatePath, // Путь к шаблонам этикеток
-	//	"",               // Значение по умолчанию для упаковщика
-	//)
 	taskService := services.NewTaskService(factoryClient, cfg.LineID)
-	//scanService := services.NewProcessTaskService(taskService, labelService, scanner, 2*time.Second)
-	//// Передаем сервис сканирования в обработчик заданий
-	//
 
-	triggerService := utils.NewTimerTrigger(1000 * time.Millisecond)
-	scanService := processors.NewLayerAggregationProcessor(taskService, scanner, triggerService)
+	camera := adapters.NewScanner(cfg.ScannerAddress, cfg.ScanCommand)
+	pusherReg, err := strconv.Atoi(cfg.PusherRegister)
+	if err != nil {
+		log.Fatal(err)
+	}
+	sensorReg, err := strconv.Atoi(cfg.SensorRegister)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	plc := adapters.NewModbusPLC(cfg.PlcAddress, 5*time.Second, 5*time.Millisecond, uint16(sensorReg), uint16(pusherReg), 5)
+
+	scanService := processors.NewAutomaticSerializationProcessor(taskService, camera, plc)
+
 	taskHandlers := handlers.NewTaskHandler(taskService, scanService)
 
 	// Создаем роутер

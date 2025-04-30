@@ -3,6 +3,13 @@ package models
 
 import "time"
 
+// Статусы единицы продукции
+const (
+	ItemStatusUnused  = "не использован"
+	ItemStatusScanned = "сканирован"
+	ItemStatusScrap   = "отбракован"
+)
+
 // Item представляет единицу продукции с кодом маркировки
 type Item struct {
 	ID          int64     `json:"id"`

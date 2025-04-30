@@ -11,12 +11,15 @@ type Config struct {
 	LineID         int    `json:"line_id"`               // ID производственной линии
 	ScannerAddress string `json:"scanner_address"`       // IP адрес сканнера
 	PrinterAddress string `json:"printer_address"`       // IP адрес принтера
+	PlcAddress     string `json:"plc_address"`           // IP адрес PLC
 	StoragePath    string `json:"storage_path"`          // Путь к файлу хранения файлов
 	TemplatePath   string `json:"template_path"`         // Путь к шаблонам этикеток
 	DbPath         string `json:"db_path"`               // Путь к базе данных
 	CodeLength     int    `json:"code_length"`           // Длина кода
 	ScanCommand    string `json:"scanner_scan_command"`  // Команда сканирования
 	AnswerNoRead   string `json:"scanner_answer_noread"` // Ответ на команду сканирования
+	PusherRegister string `json:"plc_pusher_register"`   // Регистр пушера
+	SensorRegister string `json:"plc_sensor_register"`   // Регистр сенсора
 }
 
 // DefaultConfig возвращает конфигурацию по умолчанию

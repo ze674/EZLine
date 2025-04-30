@@ -1,74 +1,131 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"os"
 	"strconv"
+	"strings"
 )
 
-// GenerateITF14 конвертирует EAN-13 в ITF-14
-func GenerateITF14(ean13 string) (string, error) {
-	// Проверяем длину EAN-13
-	if len(ean13) != 13 {
-		return "", fmt.Errorf("EAN-13 должен содержать 13 цифр")
-	}
-
-	// Убираем последнюю контрольную цифру из EAN-13
-	baseCode := ean13[:12]
-
-	// Добавляем начальную цифру упаковки (1)
-	itf14 := "1" + baseCode
-
-	// Вычисляем контрольную цифру
-	checksum := calculateITF14Checksum(itf14)
-
-	// Добавляем контрольную цифру
-	itf14 += strconv.Itoa(checksum)
-
-	return itf14, nil
-}
-
-// calculateITF14Checksum вычисляет контрольную цифру для ITF-14
-func calculateITF14Checksum(code string) int {
-	// Статические веса для ITF-14
-	weights := []int{3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1}
-
-	// Сумма произведений цифр на веса
-	total := 0
-	for i := 0; i < len(code); i++ {
-		digit, _ := strconv.Atoi(string(code[i]))
-		total += digit * weights[i]
-	}
-
-	// Вычисление контрольной цифры
-	checksum := (10 - (total % 10)) % 10
-	return checksum
-}
-
 func main() {
-	// Пример использования
-	ean13 := "4601234567890"
-	itf14, err := GenerateITF14(ean13)
-	if err != nil {
-		fmt.Println("Ошибка:", err)
+	// Проверка аргументов командной строки
+	if len(os.Args) < 5 {
+		fmt.Println("Использование: program input.txt output.txt initial_serial_number box_size")
+		fmt.Println("  input.txt - входной файл с кодами (по одному на строку)")
+		fmt.Println("  output.txt - выходной XML-файл")
+		fmt.Println("  initial_serial_number - начальный серийный номер короба (например, 01146070547613261125021210001702100001)")
+		fmt.Println("  box_size - количество кодов в одном коробе")
 		return
 	}
-	fmt.Println("EAN-13:", ean13)
-	fmt.Println("ITF-14:", itf14)
 
-	// Дополнительные тесты
-	testCases := []string{
-		"4601234567890",
-		"1234567890123",
-		"9876543210987",
-		"4607054761244",
+	inputFile := os.Args[1]
+	outputFile := os.Args[2]
+	initialSerialNumber := os.Args[3]
+	boxSize, err := strconv.Atoi(os.Args[4])
+	if err != nil {
+		fmt.Printf("Ошибка при преобразовании размера короба: %v\n", err)
+		return
 	}
 
-	for _, testEAN := range testCases {
-		result, err := GenerateITF14(testEAN)
-		if err != nil {
-			fmt.Printf("Ошибка для %s: %v\n", testEAN, err)
-		} else {
-			fmt.Printf("EAN-13: %s, ITF-14: %s\n", testEAN, result)
+	// Проверка размера короба
+	if boxSize <= 0 {
+		fmt.Println("Размер короба должен быть положительным числом")
+		return
+	}
+
+	// Открываем входной файл
+	input, err := os.Open(inputFile)
+	if err != nil {
+		fmt.Printf("Ошибка при открытии входного файла: %v\n", err)
+		return
+	}
+	defer input.Close()
+
+	// Создаем выходной файл
+	output, err := os.Create(outputFile)
+	if err != nil {
+		fmt.Printf("Ошибка при создании выходного файла: %v\n", err)
+		return
+	}
+	defer output.Close()
+
+	// Начало XML-файла
+	output.WriteString("<root> \n")
+
+	scanner := bufio.NewScanner(input)
+	currentSerialNumber := initialSerialNumber
+	codesInCurrentBox := 0
+
+	// Читаем коды из входного файла
+	for scanner.Scan() {
+		code := strings.TrimSpace(scanner.Text())
+
+		// Пропускаем пустые строки
+		if code == "" {
+			continue
 		}
+
+		// Проверяем, нужно ли увеличить серийный номер короба
+		if codesInCurrentBox >= boxSize {
+			// Увеличиваем серийный номер короба на 1
+			currentSerialNumber = incrementSerialNumber(currentSerialNumber)
+			codesInCurrentBox = 0
+		}
+
+		// Формируем строку XML
+		xmlLine := fmt.Sprintf("    <CodeNamesSerial><cCodeNameSerial>%s</cCodeNameSerial><cCodeNameSerialParent>%s</cCodeNameSerialParent><cOutID>WMS104388</cOutID></CodeNamesSerial>\n",
+			code, currentSerialNumber)
+
+		// Записываем в выходной файл
+		output.WriteString(xmlLine)
+
+		// Увеличиваем счетчик кодов в текущем коробе
+		codesInCurrentBox++
 	}
+
+	// Проверяем ошибки сканирования
+	if err := scanner.Err(); err != nil {
+		fmt.Printf("Ошибка при чтении входного файла: %v\n", err)
+	}
+
+	// Конец XML-файла
+	output.WriteString("</root>")
+
+	fmt.Println("Преобразование успешно завершено!")
+}
+
+// Функция для увеличения серийного номера короба на 1
+func incrementSerialNumber(serialNumber string) string {
+	// Преобразуем строку в число (если это возможно)
+	// Если невозможно, просто добавляем "1" в конец строки как костыль
+
+	// Предполагаем, что последние несколько цифр - это инкрементируемая часть
+	// В этом примере берем последние 5 цифр, но можно настроить по необходимости
+
+	length := len(serialNumber)
+	if length < 5 {
+		// Слишком короткий серийный номер, просто добавляем 1
+		return serialNumber + "1"
+	}
+
+	// Получаем последние 5 цифр
+	lastPart := serialNumber[length-5:]
+	prefixPart := serialNumber[:length-5]
+
+	// Преобразуем последнюю часть в число
+	lastPartNum, err := strconv.Atoi(lastPart)
+	if err != nil {
+		// Если не удается преобразовать, просто увеличиваем последний символ
+		return serialNumber[:length-1] + string(serialNumber[length-1]+1)
+	}
+
+	// Увеличиваем число на 1
+	lastPartNum++
+
+	// Форматируем обратно в строку с ведущими нулями
+	newLastPart := fmt.Sprintf("%05d", lastPartNum)
+
+	// Собираем новый серийный номер
+	return prefixPart + newLastPart
 }

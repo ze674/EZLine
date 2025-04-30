@@ -22,16 +22,31 @@ func NewContainerRepository() *ContainerRepository {
 	}
 }
 
-// CreateContainer создает новый контейнер
-func (r *ContainerRepository) CreateContainer(code string, taskID int, status string) (int64, error) {
+// Создание контейнера с числовым серийным номером
+func (r *ContainerRepository) CreateContainer(code string, serialNumber int, taskID int, status string) (int64, error) {
 	result, err := r.db.Exec(
-		"INSERT INTO containers (code, task_id, status) VALUES (?, ?, ?)",
-		code, taskID, status)
+		"INSERT INTO containers (code, serial_number, task_id, status) VALUES (?, ?, ?, ?)",
+		code, serialNumber, taskID, status)
 	if err != nil {
 		return 0, err
 	}
 
 	return result.LastInsertId()
+}
+
+// Получение последнего серийного номера для задания
+func (r *ContainerRepository) GetLastSerialNumber(taskID int) (int, error) {
+	var serialNumber int
+
+	err := r.db.QueryRow(
+		"SELECT COALESCE(MAX(serial_number), 0) FROM containers WHERE task_id = ?",
+		taskID).Scan(&serialNumber)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return serialNumber, nil
 }
 
 // GetContainerByCode возвращает контейнер по коду

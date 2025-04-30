@@ -10,8 +10,8 @@ import (
 
 const (
 	connectTimeout = 5 * time.Second
-	readTimeout    = 500 * time.Millisecond
-	writeTimeout   = 500 * time.Millisecond
+	readTimeout    = 200 * time.Millisecond
+	writeTimeout   = 200 * time.Millisecond
 )
 
 const suffix = '\n'
@@ -50,12 +50,15 @@ func (s *Scanner) Connect() error {
 // Close закрывает соединение
 func (s *Scanner) Close() error {
 	op := "scanner.tcp.Close"
+	fmt.Println(op)
 
+	var err error
 	if s.client != nil {
-		if err := s.client.Close(); err != nil {
-			return fmt.Errorf("%s: %w", op, err)
-		}
-		s.client = nil // Закрываем соединение
+		err = s.client.Close() // даже если ошибка, всё равно nil-им клиент
+		s.client = nil
+	}
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
 	}
 	return nil
 }
@@ -64,9 +67,7 @@ func (s *Scanner) Close() error {
 func (s *Scanner) Scan() (string, error) {
 	op := "scanner.tcp.Scan"
 	if s.client == nil {
-		if err := s.Connect(); err != nil {
-			return "", fmt.Errorf("%s: %w", op, err)
-		}
+		return "", fmt.Errorf("%s: scanner not connected", op)
 	}
 	fmt.Println(op)
 

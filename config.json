@@ -4,9 +4,15 @@
   "storage_path" : "./data",
   "db_path" : "./data/ezline.db",
   "template_path" : "./label/templates",
-  "scanner_address" : "192.168.252.111:2001",
-  "printer_address" : "192.168.252.112:9001",
+  "scanner_address" : "192.168.252.121:2001",
+  "plc_address" : "192.168.252.122:502",
+  "plc_pusher_register" : "8194",
+  "plc_sensor_register" : "8256",
+  "printer_address" : "192.168.252.112:9100",
   "code_length" : 31,
   "scanner_answer_noread" : "NOREAD",
   "scanner_scan_command" : " "
 }
+
+
+
